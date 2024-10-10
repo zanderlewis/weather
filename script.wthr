@@ -1,0 +1,10 @@
+MODEL WeatherPrediction
+LOCATION San Francisco
+PARAMETER Temperature 25.0
+PARAMETER WindSpeed 10.0
+FORECAST 48 1
+    COMPUTE Temperature Temperature - (WindSpeed / 5)
+    IF Temperature < 15
+        PRINT "Cool weather expected in San Francisco"
+    ENDIF
+OUTPUT Temperature forecast_output.csv
