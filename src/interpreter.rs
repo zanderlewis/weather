@@ -1,9 +1,12 @@
+use num_bigint::BigInt;
+
 use crate::ast::ASTNode;
 use crate::token::Token;
 use std::collections::HashMap;
+use num_traits::ToPrimitive;
 
 pub struct Interpreter {
-    variables: HashMap<String, f64>,
+    variables: HashMap<String, BigInt>,
 }
 
 impl Interpreter {
@@ -31,20 +34,28 @@ impl Interpreter {
                 }
             }
             ASTNode::If(condition, then_branch, else_branch) => {
-                if self.evaluate(*condition) != 0.0 {
+                if self.evaluate(*condition) != BigInt::from(0) {
                     self.execute(*then_branch);
                 } else if let Some(else_branch) = else_branch {
                     self.execute(*else_branch);
+                }
+            }
+            ASTNode::Block(nodes) => {
+                for node in nodes {
+                    self.execute(node);
                 }
             }
             _ => panic!("Unexpected AST node: {:?}", node),
         }
     }
 
-    pub fn evaluate(&mut self, node: ASTNode) -> f64 {
+    pub fn evaluate(&mut self, node: ASTNode) -> BigInt {
         match node {
             ASTNode::Number(value) => value,
-            ASTNode::Identifier(name) => *self.variables.get(&name).expect("Undefined variable"),
+            ASTNode::Identifier(name) => {
+                let value = self.variables.get(&name).expect("Undefined variable").clone();
+                BigInt::from(value)
+            },
             ASTNode::BinaryOp(left, op, right) => {
                 let left_val = self.evaluate(*left);
                 let right_val = self.evaluate(*right);
@@ -62,26 +73,29 @@ impl Interpreter {
                 // Dew point calculation formula
                 let a = 17.27;
                 let b = 237.7;
-                let alpha = ((a * temp) / (b + temp)) + humidity.ln();
-                (b * alpha) / (a - alpha)
+                let temp_f64 = temp.to_f64().unwrap();
+                let humidity_f64 = humidity.to_f64().unwrap();
+                let alpha = ((a * temp_f64) / (b + temp_f64)) + humidity_f64.ln();
+                let dew_point = (b * alpha) / (a - alpha);
+                BigInt::from(dew_point as i64)
             }
             ASTNode::FToC(fahrenheit) => {
                 let fahrenheit = self.evaluate(*fahrenheit);
-                (fahrenheit - 32.0) * 5.0 / 9.0
+                (fahrenheit - num_bigint::ToBigInt::to_bigint(&32).unwrap()) * num_bigint::ToBigInt::to_bigint(&5).unwrap() / num_bigint::ToBigInt::to_bigint(&9).unwrap()
             }
             ASTNode::CToF(celsius) => {
                 let celsius = self.evaluate(*celsius);
-                (celsius * 9.0 / 5.0) + 32.0
+                (celsius * num_bigint::ToBigInt::to_bigint(&9).unwrap() / num_bigint::ToBigInt::to_bigint(&5).unwrap()) + num_bigint::ToBigInt::to_bigint(&32).unwrap()
             }
             ASTNode::GreaterThan(left, right) => {
                 let left_val = self.evaluate(*left);
                 let right_val = self.evaluate(*right);
-                if left_val > right_val { 1.0 } else { 0.0 }
+                if left_val > right_val { BigInt::from(1) } else { BigInt::from(0) }
             }
             ASTNode::LessThan(left, right) => {
                 let left_val = self.evaluate(*left);
                 let right_val = self.evaluate(*right);
-                if left_val < right_val { 1.0 } else { 0.0 }
+                if left_val < right_val { BigInt::from(1) } else { BigInt::from(0) }
             }
             _ => panic!("Unexpected AST node: {:?}", node),
         }

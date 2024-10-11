@@ -1,6 +1,8 @@
+use num_bigint::BigInt;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
-    Number(f64),
+    Number(BigInt),
     Identifier(String),
     Plus,
     Minus,

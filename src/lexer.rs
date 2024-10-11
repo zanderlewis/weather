@@ -1,4 +1,5 @@
 use crate::token::Token;
+use num_bigint::BigInt;
 
 pub struct Lexer {
     input: Vec<char>,
@@ -60,7 +61,7 @@ impl Lexer {
             number.push(self.input[self.position]);
             self.position += 1;
         }
-        Token::Number(number.parse().unwrap())
+        Token::Number(BigInt::parse_bytes(number.as_bytes(), 10).unwrap())
     }
 
     pub fn read_identifier(&mut self, first_char: char) -> Token {

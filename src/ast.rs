@@ -1,8 +1,11 @@
 use crate::token::Token;
+use num_bigint::BigInt;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum ASTNode {
-    Number(f64),
+    Block(Vec<ASTNode>),
+    Number(BigInt),
     Identifier(String),
     StringLiteral(String),
     BinaryOp(Box<ASTNode>, Token, Box<ASTNode>),
