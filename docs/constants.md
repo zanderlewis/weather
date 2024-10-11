@@ -1,7 +1,7 @@
 # Constants
 Weather has many built-in constants that can be used in calculations.
 
-### Constants
+## Constants
 - **Kelvin constant**: 273.15 (`_kelvin_`)
 - **Pi constant**: 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679 (`_pi_`)
 - **Gas constant for dry air**: 287.05 J/(kg·K) (`_rd_`)
