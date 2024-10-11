@@ -1,8 +1,8 @@
 # Assign values to variables
 temp = 0
-humidity = 7
+humidity = 70
 fahrenheit = 86
-celsius = 30
+celsius = 35
 
 # Calculate and print the dew point
 dew_point = dewpoint(temp, humidity)

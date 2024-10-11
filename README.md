@@ -58,6 +58,8 @@ print("Celsius to Fahrenheit: ")
 print(fahrenheit_converted)
 ```
 
+You can compare this to [script.wthr.f90](script.wthr.f90) to see how Weather is more user-friendly than FORTRAN.
+
 ## Examples
 [script.wthr](script.wthr) is a good place to start.
 
