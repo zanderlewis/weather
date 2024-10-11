@@ -33,7 +33,7 @@ cargo run script.wthr
 ```
 
 ## Syntax
-The syntax of Weather is similar to that of FORTRAN, with some modern improvements. Here is an example of a simple Weather program that calculates the average temperature of a list of temperatures:
+The syntax of Weather is similar to that of Python, with some improvements for weather applications. Here is an example:
 
 ```wthr
 # Assign values to variables
