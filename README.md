@@ -10,6 +10,8 @@ An experimental programming language for weather calculations, trying to succeed
   - [Examples](#examples)
   - [Contributing](#contributing)
   - [License](#license)
+- [Constants](docs/constants.md)
+- [Functions](docs/functions.md)
 
 ## Introduction
 Weather is a programming language for weather calculations. It is designed to be simple and easy to use, while still being powerful enough to perform complex calculations. The language is inspired by FORTRAN, but aims to be more modern and user-friendly.
