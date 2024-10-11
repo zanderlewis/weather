@@ -1,8 +1,9 @@
 use num_bigint::BigInt;
-
+use rayon::prelude::*;
 use crate::ast::ASTNode;
 use crate::token::Token;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use num_traits::ToPrimitive;
 
 pub struct Interpreter {
@@ -16,11 +17,15 @@ impl Interpreter {
         }
     }
 
-    pub fn execute(&mut self, node: ASTNode) {
+    pub fn execute(interpreter: Arc<Mutex<Self>>, node: ASTNode) {
         match node {
             ASTNode::Assignment(name, expr) => {
-                let value = self.evaluate(*expr);
-                self.variables.insert(name, value);
+                let value = {
+                    let mut interpreter = interpreter.lock().unwrap();
+                    interpreter.evaluate(*expr)
+                };
+                let mut interpreter = interpreter.lock().unwrap();
+                interpreter.variables.insert(name, value);
             }
             ASTNode::Print(expr) => {
                 match *expr {
@@ -28,22 +33,29 @@ impl Interpreter {
                         println!("{}", value);
                     }
                     _ => {
-                        let value = self.evaluate(*expr);
+                        let value = {
+                            let mut interpreter = interpreter.lock().unwrap();
+                            interpreter.evaluate(*expr)
+                        };
                         println!("{}", value);
                     }
                 }
             }
             ASTNode::If(condition, then_branch, else_branch) => {
-                if self.evaluate(*condition) != BigInt::from(0) {
-                    self.execute(*then_branch);
+                let condition_result = {
+                    let mut interpreter = interpreter.lock().unwrap();
+                    interpreter.evaluate(*condition)
+                };
+                if condition_result != BigInt::from(0) {
+                    Interpreter::execute(interpreter.clone(), *then_branch);
                 } else if let Some(else_branch) = else_branch {
-                    self.execute(*else_branch);
+                    Interpreter::execute(interpreter.clone(), *else_branch);
                 }
             }
             ASTNode::Block(nodes) => {
-                for node in nodes {
-                    self.execute(node);
-                }
+                nodes.into_par_iter().for_each(|node| {
+                    Interpreter::execute(interpreter.clone(), node);
+                });
             }
             _ => panic!("Unexpected AST node: {:?}", node),
         }
@@ -102,8 +114,9 @@ impl Interpreter {
     }
 
     pub fn interpret(&mut self, nodes: Vec<ASTNode>) {
-        for node in nodes {
-            self.execute(node);
-        }
+        let interpreter = Arc::new(Mutex::new(Interpreter::new()));
+        nodes.into_iter().for_each(|node| {
+            Interpreter::execute(interpreter.clone(), node);
+        });
     }
 }
