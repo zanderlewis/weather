@@ -13,12 +13,22 @@ pub enum ASTNode {
     Print(Box<ASTNode>),
     If(Box<ASTNode>, Box<ASTNode>, Option<Box<ASTNode>>), // condition, then, else
     DewPoint(Box<ASTNode>, Box<ASTNode>), // temperature, humidity
-    FToC(Box<ASTNode>), // fahrenheit
-    CToF(Box<ASTNode>), // celsius
-    CToK(Box<ASTNode>), // celsius
-    KToC(Box<ASTNode>), // kelvin
-    FToK(Box<ASTNode>), // fahrenheit
-    KToF(Box<ASTNode>), // kelvin
+    FToC(Box<ASTNode>), // fahrenheit -> celsius
+    CToF(Box<ASTNode>), // celsius -> fahrenheit
+    CToK(Box<ASTNode>), // celsius -> kelvin
+    KToC(Box<ASTNode>), // kelvin -> celsius
+    FToK(Box<ASTNode>), // fahrenheit -> kelvin
+    KToF(Box<ASTNode>), // kelvin -> fahrenheit
+    Pi,
+    Kelvin,
+    RD,
+    CP,
+    P0,
+    LV,
+    CW,
+    RhoAir,
+    RhoWater,
+    G,
     GreaterThan(Box<ASTNode>, Box<ASTNode>),
     LessThan(Box<ASTNode>, Box<ASTNode>),
 }

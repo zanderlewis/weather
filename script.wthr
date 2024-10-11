@@ -53,3 +53,46 @@ if (humidity < 50) {
 } else {
     print("It's a humid day!")
 }
+
+# Example usage of Pi constant
+radius = 5
+# Built-in constants are surrounded by underscores
+area = _pi_ * radius * radius
+print("Area of the circle: ")
+print(area)
+
+# Example usage of the Kelvin constant
+print("Absolute zero in Kelvin: ")
+print(_kelvin_)
+
+# Example usage of the gas constant for dry air
+print("Gas constant for dry air: ")
+print(_rd_)
+
+# Example usage of the specific heat capacity of air
+print("Specific heat capacity of air: ")
+print(_cp_)
+
+# Example usage of the standard atmospheric pressure
+print("Standard atmospheric pressure: ")
+print(_p0_)
+
+# Example usage of the latent heat of vaporization for water
+print("Latent heat of vaporization for water: ")
+print(_lv_)
+
+# Example usage of the specific heat capacity of water
+print("Specific heat capacity of water: ")
+print(_cw_)
+
+# Example usage of the density of air
+print("Density of air: ")
+print(_rho_air_)
+
+# Example usage of the density of water
+print("Density of water: ")
+print(_rho_water_)
+
+# Example usage of the acceleration due to gravity
+print("Acceleration due to gravity: ")
+print(_g_)

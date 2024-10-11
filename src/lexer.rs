@@ -81,6 +81,16 @@ impl Lexer {
             "ktoc" => Token::KToC,
             "ftok" => Token::FToK,
             "ktof" => Token::KToF,
+            "_pi_" => Token::Pi,
+            "_kelvin_" => Token::Kelvin,
+            "_rd_" => Token::RD,
+            "_cp_" => Token::CP,
+            "_p0_" => Token::P0,
+            "_lv_" => Token::LV,
+            "_cw_" => Token::CW,
+            "_rho_air_" => Token::RhoAir,
+            "_rho_water_" => Token::RhoWater,
+            "_g_" => Token::G,
             _ => Token::Identifier(identifier),
         }
     }

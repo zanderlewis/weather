@@ -7,12 +7,10 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use num_traits::ToPrimitive;
 
-pub fn kelvin_constant() -> BigRational {
-    BigRational::new(BigInt::from(27315), BigInt::from(100))
-}
+use crate::constants::*;
 
 pub struct Interpreter {
-    variables: HashMap<String, BigInt>,
+    variables: HashMap<String, BigRational>,
 }
 
 impl Interpreter {
@@ -42,7 +40,7 @@ impl Interpreter {
                             let mut interpreter = interpreter.lock().unwrap();
                             interpreter.evaluate(*expr)
                         };
-                        println!("{}", value);
+                        println!("{}", value.to_f64().unwrap());
                     }
                 }
             }
@@ -51,7 +49,7 @@ impl Interpreter {
                     let mut interpreter = interpreter.lock().unwrap();
                     interpreter.evaluate(*condition)
                 };
-                if condition_result != BigInt::from(0) {
+                if condition_result != BigRational::from(BigInt::from(0)) {
                     Interpreter::execute(interpreter.clone(), *then_branch);
                 } else if let Some(else_branch) = else_branch {
                     Interpreter::execute(interpreter.clone(), *else_branch);
@@ -66,12 +64,12 @@ impl Interpreter {
         }
     }
 
-    pub fn evaluate(&mut self, node: ASTNode) -> BigInt {
+    pub fn evaluate(&mut self, node: ASTNode) -> BigRational {
         match node {
-            ASTNode::Number(value) => value,
+            ASTNode::Number(value) => BigRational::from(value),
             ASTNode::Identifier(name) => {
                 let value = self.variables.get(&name).expect("Undefined variable").clone();
-                BigInt::from(value)
+                value
             },
             ASTNode::BinaryOp(left, op, right) => {
                 let left_val = self.evaluate(*left);
@@ -88,51 +86,54 @@ impl Interpreter {
                 let temp = self.evaluate(*temp);
                 let humidity = self.evaluate(*humidity);
                 // Dew point calculation formula
-                let a = 17.27;
-                let b = 237.7;
-                let temp_f64 = temp.to_f64().unwrap();
-                let humidity_f64 = humidity.to_f64().unwrap();
-                let alpha = ((a * temp_f64) / (b + temp_f64)) + humidity_f64.ln();
-                let dew_point = (b * alpha) / (a - alpha);
-                BigInt::from(dew_point as i64)
+                let a = BigRational::new(BigInt::from(1727), BigInt::from(100));
+                let b = BigRational::new(BigInt::from(2377), BigInt::from(10));
+                let alpha = ((a.clone() * temp.clone()) / (b.clone() + temp.clone())) + BigRational::from_float(humidity.to_f64().unwrap().ln()).unwrap();
+                (b * alpha.clone()) / (a - alpha)
             }
             ASTNode::FToC(fahrenheit) => {
                 let fahrenheit = self.evaluate(*fahrenheit);
-                (fahrenheit - num_bigint::ToBigInt::to_bigint(&32).unwrap()) * num_bigint::ToBigInt::to_bigint(&5).unwrap() / num_bigint::ToBigInt::to_bigint(&9).unwrap()
+                (fahrenheit - BigRational::from_integer(BigInt::from(32))) * BigRational::new(BigInt::from(5), BigInt::from(9))
             }
             ASTNode::CToF(celsius) => {
                 let celsius = self.evaluate(*celsius);
-                (celsius * num_bigint::ToBigInt::to_bigint(&9).unwrap() / num_bigint::ToBigInt::to_bigint(&5).unwrap()) + num_bigint::ToBigInt::to_bigint(&32).unwrap()
+                (celsius * BigRational::new(BigInt::from(9), BigInt::from(5))) + BigRational::from_integer(BigInt::from(32))
             }
             ASTNode::CToK(celsius) => {
                 let celsius = self.evaluate(*celsius);
-                celsius + kelvin_constant().numer().clone() / kelvin_constant().denom().clone()
+                celsius + kelvin_constant()
             }
             ASTNode::KToC(kelvin) => {
                 let kelvin = self.evaluate(*kelvin);
-                kelvin - (kelvin_constant().numer() / kelvin_constant().denom())
+                kelvin - kelvin_constant()
             }
             ASTNode::FToK(fahrenheit) => {
                 let fahrenheit = self.evaluate(*fahrenheit);
-                (fahrenheit - num_bigint::ToBigInt::to_bigint(&32).unwrap()) * num_bigint::ToBigInt::to_bigint(&5).unwrap() / num_bigint::ToBigInt::to_bigint(&9).unwrap() + kelvin_constant().numer().clone() / kelvin_constant().denom().clone()
+                (fahrenheit - BigRational::from_integer(BigInt::from(32))) * BigRational::new(BigInt::from(5), BigInt::from(9)) + kelvin_constant()
             }
             ASTNode::KToF(kelvin) => {
                 let kelvin = self.evaluate(*kelvin);
-                {
-                    let kelvin_constant = kelvin_constant();
-                    let kelvin_constant_bigint = kelvin_constant.numer().clone() / kelvin_constant.denom().clone();
-                    (kelvin - kelvin_constant_bigint) * num_bigint::ToBigInt::to_bigint(&9).unwrap() / num_bigint::ToBigInt::to_bigint(&5).unwrap() + num_bigint::ToBigInt::to_bigint(&32).unwrap()
-                }
+                (kelvin - kelvin_constant()) * BigRational::new(BigInt::from(9), BigInt::from(5)) + BigRational::from_integer(BigInt::from(32))
             }
+            ASTNode::Pi => pi_constant(),
+            ASTNode::Kelvin => kelvin_constant(),
+            ASTNode::RD => rd_constant(),
+            ASTNode::CP => cp_constant(),
+            ASTNode::P0 => p0_constant(),
+            ASTNode::LV => lv_constant(),
+            ASTNode::CW => cw_constant(),
+            ASTNode::RhoAir => rho_air_constant(),
+            ASTNode::RhoWater => rho_water_constant(),
+            ASTNode::G => g_constant(),
             ASTNode::GreaterThan(left, right) => {
                 let left_val = self.evaluate(*left);
                 let right_val = self.evaluate(*right);
-                if left_val > right_val { BigInt::from(1) } else { BigInt::from(0) }
+                if left_val > right_val { BigRational::from_integer(BigInt::from(1)) } else { BigRational::from_integer(BigInt::from(0)) }
             }
             ASTNode::LessThan(left, right) => {
                 let left_val = self.evaluate(*left);
                 let right_val = self.evaluate(*right);
-                if left_val < right_val { BigInt::from(1) } else { BigInt::from(0) }
+                if left_val < right_val { BigRational::from_integer(BigInt::from(1)) } else { BigRational::from_integer(BigInt::from(0)) }
             }
             _ => panic!("Unexpected AST node: {:?}", node),
         }

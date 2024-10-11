@@ -1,10 +1,11 @@
 use std::env;
 use std::fs;
 
-/* == + == */
-mod token; //
-mod ast;   //
-/* == + == */
+/* ==== + ==== */
+mod token;     //
+mod ast;       //
+mod constants; //
+/* ==== + ==== */
 
 mod lexer;
 use lexer::Lexer;

@@ -67,6 +67,46 @@ impl Parser {
             Token::KToC => self.parse_ktoc(),
             Token::FToK => self.parse_ftok(),
             Token::KToF => self.parse_ktof(),
+            Token::Pi => {
+                self.consume(Token::Pi);
+                ASTNode::Pi
+            }
+            Token::Kelvin => {
+                self.consume(Token::Kelvin);
+                ASTNode::Kelvin
+            }
+            Token::RD => {
+                self.consume(Token::RD);
+                ASTNode::RD
+            }
+            Token::CP => {
+                self.consume(Token::CP);
+                ASTNode::CP
+            }
+            Token::P0 => {
+                self.consume(Token::P0);
+                ASTNode::P0
+            }
+            Token::LV => {
+                self.consume(Token::LV);
+                ASTNode::LV
+            }
+            Token::CW => {
+                self.consume(Token::CW);
+                ASTNode::CW
+            }
+            Token::RhoAir => {
+                self.consume(Token::RhoAir);
+                ASTNode::RhoAir
+            }
+            Token::RhoWater => {
+                self.consume(Token::RhoWater);
+                ASTNode::RhoWater
+            }
+            Token::G => {
+                self.consume(Token::G);
+                ASTNode::G
+            }
             Token::LParen => {
                 self.consume(Token::LParen);
                 let expr = self.parse_expression();
