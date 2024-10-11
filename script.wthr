@@ -4,9 +4,6 @@ humidity = 7
 fahrenheit = 86
 celsius = 30
 
-# Print a string literal
-print("Weather Script Example")
-
 # Calculate and print the dew point
 dew_point = dewpoint(temp, humidity)
 print("Dew Point: ")
