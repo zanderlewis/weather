@@ -1,9 +1,8 @@
-# Assign values to variables
-temp = 0
-humidity = 70
-fahrenheit = 86
-celsius = 35
-kelvin = 300
+temp = 28  # Current temperature in Celsius
+humidity = 75  # Current humidity percentage
+fahrenheit = 82  # Current temperature in Fahrenheit
+celsius = 28  # Current temperature in Celsius
+kelvin = 301  # Current temperature in Kelvin
 
 # Calculate and print the dew point
 dew_point = dewpoint(temp, humidity)
@@ -40,18 +39,34 @@ celsius_converted = ktoc(kelvin)
 print("Kelvin to Celsius: ")
 print(celsius_converted)
 
-# Conditional statement example
-if (temp > 25) {
-    print("It's a hot day!")
+# Conditional statement example for temperature
+if (temp > 35) {
+    print("Heat advisory: It's extremely hot!")
 } else {
-    print("It's a cool day!")
+    if (temp > 30) {
+        print("It's a hot day!")
+    } else {
+        if (temp > 20) {
+            print("It's a warm day!")
+        } else {
+            if (temp > 10) {
+                print("It's a cool day!")
+            } else {
+                print("It's a cold day!")
+            }
+        }
+    }
 }
 
-# Less than example
-if (humidity < 50) {
+# Conditional statement example for humidity
+if (humidity < 30) {
     print("It's a dry day!")
 } else {
-    print("It's a humid day!")
+    if (humidity < 60) {
+        print("It's a comfortable day!")
+    } else {
+        print("It's a humid day!")
+    }
 }
 
 # Example usage of Pi constant
