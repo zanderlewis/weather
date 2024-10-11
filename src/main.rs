@@ -1,41 +1,33 @@
 use std::collections::HashMap;
+use std::env;
 use std::fs;
-use std::fs::File;
-use std::io::{Read, Write};
 
-// Token types for the lexer
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum Token {
-    KeywordModel,
-    KeywordLocation,
-    KeywordParameter,
-    KeywordForecast,
-    KeywordCompute,
-    KeywordIf,
-    KeywordElseIf,
-    KeywordEndIf,
-    KeywordPrint,
-    KeywordOutput,
-    KeywordFunction,
-    KeywordEndFunction,
-    KeywordCall,
-    Identifier(String),
     Number(f64),
-    StringLiteral(String),
-    GreaterThan,
-    LessThan,
-    Equals,
+    Identifier(String),
     Plus,
     Minus,
-    Multiply,
-    Divide,
+    Star,
+    Slash,
+    GreaterThan,
+    LessThan,
+    Assign,
     Comma,
-    OpenParen,
-    CloseParen,
-    Eof,
+    Print,
+    LBrace,
+    RBrace,
+    LParen,
+    RParen,
+    If,
+    Else,
+    StringLiteral(String),
+    DewPoint,
+    FToC,
+    CToF,
+    EOF,
 }
 
-// Lexer to convert the script into tokens
 struct Lexer {
     input: Vec<char>,
     position: usize,
@@ -43,459 +35,437 @@ struct Lexer {
 
 impl Lexer {
     fn new(input: String) -> Self {
-        Lexer {
+        Self {
             input: input.chars().collect(),
             position: 0,
         }
     }
 
     fn next_token(&mut self) -> Token {
-        while self.position < self.input.len() {
-            let current_char = self.input[self.position];
-
-            match current_char {
-                ' ' | '\t' | '\n' => self.position += 1, // Skip whitespace
-                '=' => {
-                    self.position += 1;
-                    return Token::Equals;
-                }
-                '>' => {
-                    self.position += 1;
-                    return Token::GreaterThan;
-                }
-                '<' => {
-                    self.position += 1;
-                    return Token::LessThan;
-                }
-                '+' => {
-                    self.position += 1;
-                    return Token::Plus;
-                }
-                '-' => {
-                    self.position += 1;
-                    return Token::Minus;
-                }
-                '*' => {
-                    self.position += 1;
-                    return Token::Multiply;
-                }
-                '/' => {
-                    self.position += 1;
-                    return Token::Divide;
-                }
-                ',' => {
-                    self.position += 1;
-                    return Token::Comma;
-                }
-                '(' => {
-                    self.position += 1;
-                    return Token::OpenParen;
-                }
-                ')' => {
-                    self.position += 1;
-                    return Token::CloseParen;
-                }
-                '"' => return self.parse_string_literal(),
-                _ if current_char.is_digit(10) || current_char == '.' => return self.parse_number(),
-                _ if current_char.is_alphabetic() => return self.parse_identifier(),
-                _ => self.position += 1,
-            }
+        self.skip_whitespace();
+        if self.position >= self.input.len() {
+            return Token::EOF;
         }
-        Token::Eof
+
+        let ch = self.input[self.position];
+        self.position += 1;
+
+        match ch {
+            '+' => Token::Plus,
+            '-' => Token::Minus,
+            '*' => Token::Star,
+            '/' => Token::Slash,
+            '>' => Token::GreaterThan,
+            '<' => Token::LessThan,
+            '=' => Token::Assign,
+            '{' => Token::LBrace,
+            '}' => Token::RBrace,
+            '(' => Token::LParen,
+            ')' => Token::RParen,
+            '"' => self.read_string_literal(),
+            '0'..='9' => self.read_number(ch),
+            'a'..='z' | 'A'..='Z' | '_' => self.read_identifier(ch),
+            ',' => Token::Comma,
+            '#' => {
+                while self.position < self.input.len() && self.input[self.position] != '\n' {
+                    self.position += 1;
+                }
+                self.next_token()
+            }
+            _ => panic!("Unexpected character: {}", ch),
+        }
     }
 
-    fn parse_identifier(&mut self) -> Token {
-        let start = self.position;
-        while self.position < self.input.len() && self.input[self.position].is_alphanumeric() {
+    fn skip_whitespace(&mut self) {
+        while self.position < self.input.len() && self.input[self.position].is_whitespace() {
             self.position += 1;
         }
-        let identifier: String = self.input[start..self.position].iter().collect();
+    }
+
+    fn read_number(&mut self, first_char: char) -> Token {
+        let mut number = first_char.to_string();
+        while self.position < self.input.len() && self.input[self.position].is_digit(10) {
+            number.push(self.input[self.position]);
+            self.position += 1;
+        }
+        Token::Number(number.parse().unwrap())
+    }
+
+    fn read_identifier(&mut self, first_char: char) -> Token {
+        let mut identifier = first_char.to_string();
+        while self.position < self.input.len() && (self.input[self.position].is_alphanumeric() || self.input[self.position] == '_') {
+            identifier.push(self.input[self.position]);
+            self.position += 1;
+        }
         match identifier.as_str() {
-            "MODEL" => Token::KeywordModel,
-            "LOCATION" => Token::KeywordLocation,
-            "PARAMETER" => Token::KeywordParameter,
-            "FORECAST" => Token::KeywordForecast,
-            "COMPUTE" => Token::KeywordCompute,
-            "IF" => Token::KeywordIf,
-            "ELSEIF" => Token::KeywordElseIf,
-            "ENDIF" => Token::KeywordEndIf,
-            "PRINT" => Token::KeywordPrint,
-            "OUTPUT" => Token::KeywordOutput,
-            "FUNCTION" => Token::KeywordFunction,
-            "ENDFUNCTION" => Token::KeywordEndFunction,
-            "CALL" => Token::KeywordCall,
+            "print" => Token::Print,
+            "if" => Token::If,
+            "else" => Token::Else,
+            "dewpoint" => Token::DewPoint,
+            "ftoc" => Token::FToC,
+            "ctof" => Token::CToF,
             _ => Token::Identifier(identifier),
         }
     }
 
-    fn parse_number(&mut self) -> Token {
-        let start = self.position;
-        while self.position < self.input.len() && (self.input[self.position].is_digit(10) || self.input[self.position] == '.') {
-            self.position += 1;
-        }
-        let number: String = self.input[start..self.position].iter().collect();
-        Token::Number(number.parse().unwrap())
-    }
-
-    fn parse_string_literal(&mut self) -> Token {
-        self.position += 1; // Skip the opening quote
-        let start = self.position;
+    fn read_string_literal(&mut self) -> Token {
+        let mut string = String::new();
         while self.position < self.input.len() && self.input[self.position] != '"' {
+            string.push(self.input[self.position]);
             self.position += 1;
         }
-        let string_literal: String = self.input[start..self.position].iter().collect();
-        self.position += 1; // Skip the closing quote
-        Token::StringLiteral(string_literal)
+        self.position += 1; // Consume closing quote
+        Token::StringLiteral(string)
     }
 }
 
-// AST Node for the Parser
 #[derive(Debug, Clone)]
 enum ASTNode {
-    Model { name: String, location: String, parameters: HashMap<String, f64>, forecast: Vec<ASTNode> },
-    Parameter { name: String, value: f64 },
-    ForecastLoop { duration: i32, step: i32, computations: Vec<ASTNode> },
-    Computation { variable: String, expression: String },
-    Conditional { condition: String, true_block: Vec<ASTNode>, false_block: Option<Vec<ASTNode>> },
-    PrintStatement { message: String },
-    Output { variables: Vec<String>, file: String },
-    Function { name: String, body: Vec<ASTNode> },
-    Call { name: String },
+    Number(f64),
+    Identifier(String),
+    StringLiteral(String),
+    BinaryOp(Box<ASTNode>, Token, Box<ASTNode>),
+    Assignment(String, Box<ASTNode>),
+    Print(Box<ASTNode>),
+    If(Box<ASTNode>, Box<ASTNode>, Option<Box<ASTNode>>), // condition, then, else
+    DewPoint(Box<ASTNode>, Box<ASTNode>), // temperature, humidity
+    FToC(Box<ASTNode>), // fahrenheit
+    CToF(Box<ASTNode>), // celsius
+    GreaterThan(Box<ASTNode>, Box<ASTNode>),
+    LessThan(Box<ASTNode>, Box<ASTNode>),
 }
 
-// Parser to convert tokens into an AST
 struct Parser {
-    tokens: Vec<Token>,
-    position: usize,
+    lexer: Lexer,
+    current_token: Token,
 }
 
 impl Parser {
-    fn new(tokens: Vec<Token>) -> Self {
-        Parser {
-            tokens,
-            position: 0,
+    fn new(mut lexer: Lexer) -> Self {
+        let current_token = lexer.next_token();
+        Self { lexer, current_token }
+    }
+    
+    fn parse_expression(&mut self) -> ASTNode {
+        let mut node = self.parse_term();
+        while self.current_token == Token::Plus || self.current_token == Token::Minus || self.current_token == Token::GreaterThan || self.current_token == Token::LessThan {
+            let token = self.current_token.clone();
+            self.current_token = self.lexer.next_token();
+            node = match token {
+                Token::Plus | Token::Minus => ASTNode::BinaryOp(Box::new(node), token, Box::new(self.parse_term())),
+                Token::GreaterThan => ASTNode::GreaterThan(Box::new(node), Box::new(self.parse_term())),
+                Token::LessThan => ASTNode::LessThan(Box::new(node), Box::new(self.parse_term())),
+                _ => panic!("Unexpected token: {:?}", token),
+            };
         }
+        node
     }
 
-    fn parse(&mut self) -> ASTNode {
-        self.parse_model()
+    fn parse_term(&mut self) -> ASTNode {
+        let mut node = self.parse_factor();
+        while self.current_token == Token::Star || self.current_token == Token::Slash {
+            let token = self.current_token.clone();
+            self.current_token = self.lexer.next_token();
+            node = ASTNode::BinaryOp(Box::new(node), token, Box::new(self.parse_factor()));
+        }
+        node
     }
 
-    fn parse_model(&mut self) -> ASTNode {
-        self.expect_token(Token::KeywordModel);
-        let name = self.expect_identifier();
-        self.expect_token(Token::KeywordLocation);
-        let location = self.expect_string_literal();
-        let mut parameters = HashMap::new();
-        let mut forecast = Vec::new();
-
-        while !self.is_eof() {
-            match self.peek_token() {
-                Token::KeywordParameter => {
-                    self.next_token();
-                    let param_name = self.expect_identifier();
-                    let param_value = self.expect_number();
-                    parameters.insert(param_name, param_value);
-                }
-                Token::KeywordForecast => {
-                    self.next_token();
-                    let duration = self.expect_number() as i32;
-                    let step = self.expect_number() as i32;
-                    let computations = self.parse_computations();
-                    forecast.push(ASTNode::ForecastLoop { duration, step, computations });
-                }
-                Token::KeywordFunction => {
-                    self.next_token();
-                    let func_name = self.expect_identifier();
-                    let body = self.parse_computations();
-                    self.expect_token(Token::KeywordEndFunction);
-                    forecast.push(ASTNode::Function { name: func_name, body });
-                }
-                Token::KeywordCall => {
-                    self.next_token();
-                    let func_name = self.expect_identifier();
-                    forecast.push(ASTNode::Call { name: func_name });
-                }
-                Token::KeywordOutput => {
-                    self.next_token();
-                    let variables = self.parse_variables();
-                    let file = self.expect_string_literal();
-                    forecast.push(ASTNode::Output { variables, file });
-                }
-                _ => break,
+    fn parse_factor(&mut self) -> ASTNode {
+        match self.current_token.clone() {
+            Token::Number(value) => {
+                self.current_token = self.lexer.next_token();
+                ASTNode::Number(value)
             }
-        }
-
-        ASTNode::Model { name, location, parameters, forecast }
-    }
-
-    fn parse_computations(&mut self) -> Vec<ASTNode> {
-        let mut computations = Vec::new();
-        while !self.is_eof() {
-            match self.peek_token() {
-                Token::KeywordCompute => {
-                    self.next_token();
-                    let variable = self.expect_identifier();
-                    let expression = self.expect_expression();
-                    computations.push(ASTNode::Computation { variable, expression });
-                }
-                Token::KeywordIf => {
-                    self.next_token();
-                    let condition = self.expect_expression();
-                    let true_block = self.parse_computations();
-                    let false_block = if self.peek_token() == Token::KeywordElseIf {
-                        self.next_token();
-                        Some(self.parse_computations())
+            Token::Identifier(name) => {
+                self.current_token = self.lexer.next_token();
+                ASTNode::Identifier(name)
+            }
+            Token::StringLiteral(value) => {
+                self.current_token = self.lexer.next_token();
+                ASTNode::StringLiteral(value)
+            }
+            Token::DewPoint => {
+                self.current_token = self.lexer.next_token(); // Consume 'dewpoint'
+                if self.current_token == Token::LParen {
+                    self.current_token = self.lexer.next_token(); // Consume '('
+                    let temp = self.parse_expression();
+                    if self.current_token == Token::Comma {
+                        self.current_token = self.lexer.next_token(); // Consume ','
+                        let humidity = self.parse_expression();
+                        if self.current_token == Token::RParen {
+                            self.current_token = self.lexer.next_token(); // Consume ')'
+                            ASTNode::DewPoint(Box::new(temp), Box::new(humidity))
+                        } else {
+                            panic!("Expected ')'");
+                        }
                     } else {
-                        None
-                    };
-                    self.expect_token(Token::KeywordEndIf);
-                    computations.push(ASTNode::Conditional { condition, true_block, false_block });
+                        panic!("Expected ','");
+                    }
+                } else {
+                    panic!("Expected '(' after 'dewpoint'");
                 }
-                Token::KeywordPrint => {
-                    self.next_token();
-                    let message = self.expect_string_literal();
-                    computations.push(ASTNode::PrintStatement { message });
+            }
+            Token::FToC => {
+                self.current_token = self.lexer.next_token(); // Consume 'ftoc'
+                if self.current_token == Token::LParen {
+                    self.current_token = self.lexer.next_token(); // Consume '('
+                    let fahrenheit = self.parse_expression();
+                    if self.current_token == Token::RParen {
+                        self.current_token = self.lexer.next_token(); // Consume ')'
+                        ASTNode::FToC(Box::new(fahrenheit))
+                    } else {
+                        panic!("Expected ')'");
+                    }
+                } else {
+                    panic!("Expected '(' after 'ftoc'");
                 }
-                _ => break,
             }
-        }
-        computations
-    }
-
-    fn parse_variables(&mut self) -> Vec<String> {
-        let mut variables = Vec::new();
-        while let Token::Identifier(var) = self.peek_token() {
-            variables.push(var.clone());
-            self.next_token();
-            if self.peek_token() != Token::Comma {
-                break;
-            }
-            self.next_token();
-        }
-        variables
-    }
-
-    fn expect_token(&mut self, expected: Token) {
-        let token = self.next_token();
-        if token != expected {
-            panic!("Expected {:?}, found {:?}", expected, token);
-        }
-    }
-
-    fn expect_identifier(&mut self) -> String {
-        if let Token::Identifier(name) = self.next_token() {
-            name
-        } else {
-            panic!("Expected identifier");
-        }
-    }
-
-    fn expect_number(&mut self) -> f64 {
-        if let Token::Number(value) = self.next_token() {
-            value
-        } else {
-            panic!("Expected number");
-        }
-    }
-
-    fn expect_string_literal(&mut self) -> String {
-        if let Token::StringLiteral(value) = self.next_token() {
-            value
-        } else {
-            panic!("Expected string literal");
-        }
-    }
-
-    fn expect_expression(&mut self) -> String {
-        let mut expression = String::new();
-        while !self.is_eof() {
-            match self.peek_token() {
-                Token::Identifier(_) | Token::Number(_) | Token::Plus | Token::Minus | Token::Multiply | Token::Divide => {
-                    expression.push_str(&format!("{:?} ", self.next_token()));
+            Token::CToF => {
+                self.current_token = self.lexer.next_token(); // Consume 'ctof'
+                if self.current_token == Token::LParen {
+                    self.current_token = self.lexer.next_token(); // Consume '('
+                    let celsius = self.parse_expression();
+                    if self.current_token == Token::RParen {
+                        self.current_token = self.lexer.next_token(); // Consume ')'
+                        ASTNode::CToF(Box::new(celsius))
+                    } else {
+                        panic!("Expected ')'");
+                    }
+                } else {
+                    panic!("Expected '(' after 'ctof'");
                 }
-                _ => break,
             }
+            Token::LParen => {
+                self.current_token = self.lexer.next_token();
+                let expr = self.parse_expression();
+                if self.current_token == Token::RParen {
+                    self.current_token = self.lexer.next_token();
+                    expr
+                } else {
+                    panic!("Expected ')'");
+                }
+            }
+            Token::LBrace => {
+                self.current_token = self.lexer.next_token();
+                let expr = self.parse_expression();
+                if self.current_token == Token::RBrace {
+                    self.current_token = self.lexer.next_token();
+                    expr
+                } else {
+                    panic!("Expected '}}'");
+                }
+            }
+            _ => panic!("Unexpected token: {:?}", self.current_token),
         }
-        expression.trim().to_string()
     }
 
-    fn next_token(&mut self) -> Token {
-        if self.position < self.tokens.len() {
-            let token = self.tokens[self.position].clone();
-            self.position += 1;
-            token
+    fn parse_statement(&mut self) -> ASTNode {
+        match self.current_token.clone() {
+            Token::Identifier(_) => self.parse_assignment(),
+            Token::Print => self.parse_print(),
+            Token::If => self.parse_if(),
+            _ => panic!("Unexpected token: {:?}", self.current_token),
+        }
+    }
+
+    fn parse_assignment(&mut self) -> ASTNode {
+        let name = match self.current_token.clone() {
+            Token::Identifier(name) => name,
+            _ => panic!("Expected identifier"),
+        };
+        self.current_token = self.lexer.next_token(); // Consume identifier
+        if self.current_token == Token::Assign {
+            self.current_token = self.lexer.next_token(); // Consume '='
+            let expr = self.parse_expression();
+            ASTNode::Assignment(name, Box::new(expr))
         } else {
-            Token::Eof
+            panic!("Expected '='");
         }
     }
 
-    fn peek_token(&self) -> Token {
-        if self.position < self.tokens.len() {
-            self.tokens[self.position].clone()
+    fn parse_print(&mut self) -> ASTNode {
+        self.current_token = self.lexer.next_token(); // Consume 'print'
+        if self.current_token == Token::LParen {
+            self.current_token = self.lexer.next_token(); // Consume '('
+            let expr = self.parse_expression();
+            if self.current_token == Token::RParen {
+                self.current_token = self.lexer.next_token(); // Consume ')'
+                ASTNode::Print(Box::new(expr))
+            } else {
+                panic!("Expected ')'");
+            }
         } else {
-            Token::Eof
+            panic!("Expected '(' after 'print'");
         }
     }
 
-    fn is_eof(&self) -> bool {
-        self.position >= self.tokens.len()
+    fn parse_if(&mut self) -> ASTNode {
+        self.current_token = self.lexer.next_token(); // Consume 'if'
+        if self.current_token == Token::LParen {
+            self.current_token = self.lexer.next_token(); // Consume '('
+            let condition = self.parse_expression();
+            if self.current_token == Token::RParen {
+                self.current_token = self.lexer.next_token(); // Consume ')'
+                if self.current_token == Token::LBrace {
+                    self.current_token = self.lexer.next_token(); // Consume '{'
+                    let then_branch = self.parse_block();
+                    if self.current_token == Token::RBrace {
+                        self.current_token = self.lexer.next_token(); // Consume '}'
+                        let else_branch = if self.current_token == Token::Else {
+                            self.current_token = self.lexer.next_token(); // Consume 'else'
+                            if self.current_token == Token::LBrace {
+                                self.current_token = self.lexer.next_token(); // Consume '{'
+                                let else_branch = self.parse_block();
+                                if self.current_token == Token::RBrace {
+                                    self.current_token = self.lexer.next_token(); // Consume '}'
+                                    Some(Box::new(else_branch))
+                                } else {
+                                    panic!("Expected '}}'");
+                                }
+                            } else {
+                                panic!("Expected '{{' after 'else'");
+                            }
+                        } else {
+                            None
+                        };
+                        ASTNode::If(Box::new(condition), Box::new(then_branch), else_branch)
+                    } else {
+                        panic!("Expected '}}'");
+                    }
+                } else {
+                    panic!("Expected '{{' after 'if'");
+                }
+            } else {
+                panic!("Expected ')'");
+            }
+        } else {
+            panic!("Expected '(' after 'if'");
+        }
+    }
+
+    fn parse_block(&mut self) -> ASTNode {
+        let mut nodes = Vec::new();
+        while self.current_token != Token::RBrace && self.current_token != Token::EOF {
+            nodes.push(self.parse_statement());
+        }
+        // Assuming a block is a sequence of statements, we can return the first statement for simplicity
+        // In a real implementation, you might want to return a Block node containing all statements
+        nodes.into_iter().next().expect("Expected at least one statement in block")
+    }
+
+    fn parse(&mut self) -> Vec<ASTNode> {
+        let mut nodes = Vec::new();
+        while self.current_token != Token::EOF {
+            nodes.push(self.parse_statement());
+        }
+        nodes
     }
 }
 
-// Interpreter for executing the AST
 struct Interpreter {
     variables: HashMap<String, f64>,
-    functions: HashMap<String, Vec<ASTNode>>,
 }
 
 impl Interpreter {
     fn new() -> Self {
-        Interpreter {
+        Self {
             variables: HashMap::new(),
-            functions: HashMap::new(),
         }
     }
 
-    fn run(&mut self, ast: &ASTNode) {
-        match ast {
-            ASTNode::Model { name, location, parameters, forecast } => {
-                println!("Running model: {} for location: {}", name, location);
-                self.variables = parameters.clone();
-                for step in forecast {
-                    self.run(step);
-                }
+    fn execute(&mut self, node: ASTNode) {
+        match node {
+            ASTNode::Assignment(name, expr) => {
+                let value = self.evaluate(*expr);
+                self.variables.insert(name, value);
             }
-            ASTNode::Parameter { name, value } => {
-                self.variables.insert(name.clone(), *value);
-                println!("Set parameter {} to {}", name, value);
-            }
-            ASTNode::ForecastLoop { duration, step, computations } => {
-                for hour in (0..*duration).step_by(*step as usize) {
-                    println!("Forecasting hour: {}", hour);
-                    for computation in computations {
-                        self.run(computation);
+            ASTNode::Print(expr) => {
+                match *expr {
+                    ASTNode::StringLiteral(value) => {
+                        println!("{}", value);
+                    }
+                    _ => {
+                        let value = self.evaluate(*expr);
+                        println!("{}", value);
                     }
                 }
             }
-            ASTNode::Computation { variable, expression } => {
-                if let Some(value) = self.evaluate_expression(expression) {
-                    self.variables.insert(variable.clone(), value);
-                    println!("Computed new value for {}: {}", variable, value);
+            ASTNode::If(condition, then_branch, else_branch) => {
+                if self.evaluate(*condition) != 0.0 {
+                    self.execute(*then_branch);
+                } else if let Some(else_branch) = else_branch {
+                    self.execute(*else_branch);
                 }
             }
-            ASTNode::Conditional { condition, true_block, false_block } => {
-                if self.evaluate_condition(condition) {
-                    for statement in true_block {
-                        self.run(statement);
-                    }
-                } else if let Some(false_statements) = false_block {
-                    for statement in false_statements {
-                        self.run(statement);
-                    }
-                }
-            }
-            ASTNode::PrintStatement { message } => {
-                println!("{}", message);
-            }
-            ASTNode::Output { variables, file } => {
-                self.write_to_csv(variables, file);
-            }
-            ASTNode::Function { name, body } => {
-                self.functions.insert(name.clone(), body.to_vec());
-            }
-            ASTNode::Call { name } => {
-                if let Some(body) = self.functions.get(name).cloned() {
-                    for statement in body {
-                        self.run(&statement);
-                    }
-                }
-            }
+            _ => panic!("Unexpected AST node: {:?}", node),
         }
     }
 
-    fn evaluate_expression(&self, expression: &String) -> Option<f64> {
-        // Basic expression evaluation (simplified)
-        let tokens: Vec<&str> = expression.split_whitespace().collect();
-        if tokens.len() == 3 {
-            let left = self.variables.get(tokens[0])?;
-            let right: f64 = match tokens[2].parse() {
-                Ok(val) => val,
-                Err(_) => return None,
-            };
-            match tokens[1] {
-                "+" => Some(left + right),
-                "-" => Some(left - right),
-                "*" => Some(left * right),
-                "/" => Some(left / right),
-                _ => None,
+    fn evaluate(&mut self, node: ASTNode) -> f64 {
+        match node {
+            ASTNode::Number(value) => value,
+            ASTNode::Identifier(name) => *self.variables.get(&name).expect("Undefined variable"),
+            ASTNode::BinaryOp(left, op, right) => {
+                let left_val = self.evaluate(*left);
+                let right_val = self.evaluate(*right);
+                match op {
+                    Token::Plus => left_val + right_val,
+                    Token::Minus => left_val - right_val,
+                    Token::Star => left_val * right_val,
+                    Token::Slash => left_val / right_val,
+                    _ => panic!("Unexpected operator: {:?}", op),
+                }
             }
-        } else {
-            None
+            ASTNode::DewPoint(temp, humidity) => {
+                let temp = self.evaluate(*temp);
+                let humidity = self.evaluate(*humidity);
+                // Dew point calculation formula
+                let a = 17.27;
+                let b = 237.7;
+                let alpha = ((a * temp) / (b + temp)) + humidity.ln();
+                (b * alpha) / (a - alpha)
+            }
+            ASTNode::FToC(fahrenheit) => {
+                let fahrenheit = self.evaluate(*fahrenheit);
+                (fahrenheit - 32.0) * 5.0 / 9.0
+            }
+            ASTNode::CToF(celsius) => {
+                let celsius = self.evaluate(*celsius);
+                (celsius * 9.0 / 5.0) + 32.0
+            }
+            ASTNode::GreaterThan(left, right) => {
+                let left_val = self.evaluate(*left);
+                let right_val = self.evaluate(*right);
+                if left_val > right_val { 1.0 } else { 0.0 }
+            }
+            ASTNode::LessThan(left, right) => {
+                let left_val = self.evaluate(*left);
+                let right_val = self.evaluate(*right);
+                if left_val < right_val { 1.0 } else { 0.0 }
+            }
+            _ => panic!("Unexpected AST node: {:?}", node),
         }
     }
 
-    fn evaluate_condition(&self, condition: &String) -> bool {
-        // Basic condition evaluation (simplified)
-        let tokens: Vec<&str> = condition.split_whitespace().collect();
-        if tokens.len() == 3 {
-            let left = self.variables.get(tokens[0]);
-            let right: f64 = match tokens[2].parse() {
-                Ok(val) => val,
-                Err(_) => return false,
-            };
-            match tokens[1] {
-                ">" => match left {
-                    Some(&val) => val > right,
-                    None => false,
-                },
-                "<" => match left {
-                    Some(&val) => val < right,
-                    None => false,
-                },
-                "=" => match left {
-                    Some(&val) => val == right,
-                    None => false,
-                },
-                _ => false,
-            }
-        } else {
-            false
+    fn interpret(&mut self, nodes: Vec<ASTNode>) {
+        for node in nodes {
+            self.execute(node);
         }
-    }
-
-    fn write_to_csv(&self, variables: &Vec<String>, file: &String) {
-        let mut wtr = csv::Writer::from_path(file).expect("Unable to create file");
-        for variable in variables {
-            if let Some(value) = self.variables.get(variable) {
-                wtr.write_record(&[variable, &value.to_string()]).expect("Unable to write record");
-            }
-        }
-        wtr.flush().expect("Unable to flush writer");
-        println!("Saved variables {:?} to file {}", variables, file);
     }
 }
 
-// Example MeteoScript Program
 fn main() {
-    let filename = "script.wthr";
-    let mut file = fs::File::open(filename).expect("Unable to open file");
-    let mut script = String::new();
-    file.read_to_string(&mut script).expect("Unable to read file");
-
-    let mut lexer = Lexer::new(script);
-    let mut tokens = Vec::new();
-    loop {
-        let token = lexer.next_token();
-        if token == Token::Eof {
-            break;
-        }
-        tokens.push(token);
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
+        eprintln!("Usage: {} <script>", args[0]);
+        return;
     }
 
-    let mut parser = Parser::new(tokens);
-    let ast = parser.parse();
-
+    let script = fs::read_to_string(&args[1]).expect("Failed to read script");
+    let lexer = Lexer::new(script);
+    let mut parser = Parser::new(lexer);
+    let nodes = parser.parse();
     let mut interpreter = Interpreter::new();
-    interpreter.run(&ast);
+    interpreter.interpret(nodes);
 }
