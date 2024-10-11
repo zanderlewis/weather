@@ -1,10 +1,15 @@
 use num_bigint::BigInt;
+use num_rational::BigRational;
 use rayon::prelude::*;
 use crate::ast::ASTNode;
 use crate::token::Token;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use num_traits::ToPrimitive;
+
+pub fn kelvin_constant() -> BigRational {
+    BigRational::new(BigInt::from(27315), BigInt::from(100))
+}
 
 pub struct Interpreter {
     variables: HashMap<String, BigInt>,
@@ -98,6 +103,26 @@ impl Interpreter {
             ASTNode::CToF(celsius) => {
                 let celsius = self.evaluate(*celsius);
                 (celsius * num_bigint::ToBigInt::to_bigint(&9).unwrap() / num_bigint::ToBigInt::to_bigint(&5).unwrap()) + num_bigint::ToBigInt::to_bigint(&32).unwrap()
+            }
+            ASTNode::CToK(celsius) => {
+                let celsius = self.evaluate(*celsius);
+                celsius + kelvin_constant().numer().clone() / kelvin_constant().denom().clone()
+            }
+            ASTNode::KToC(kelvin) => {
+                let kelvin = self.evaluate(*kelvin);
+                kelvin - (kelvin_constant().numer() / kelvin_constant().denom())
+            }
+            ASTNode::FToK(fahrenheit) => {
+                let fahrenheit = self.evaluate(*fahrenheit);
+                (fahrenheit - num_bigint::ToBigInt::to_bigint(&32).unwrap()) * num_bigint::ToBigInt::to_bigint(&5).unwrap() / num_bigint::ToBigInt::to_bigint(&9).unwrap() + kelvin_constant().numer().clone() / kelvin_constant().denom().clone()
+            }
+            ASTNode::KToF(kelvin) => {
+                let kelvin = self.evaluate(*kelvin);
+                {
+                    let kelvin_constant = kelvin_constant();
+                    let kelvin_constant_bigint = kelvin_constant.numer().clone() / kelvin_constant.denom().clone();
+                    (kelvin - kelvin_constant_bigint) * num_bigint::ToBigInt::to_bigint(&9).unwrap() / num_bigint::ToBigInt::to_bigint(&5).unwrap() + num_bigint::ToBigInt::to_bigint(&32).unwrap()
+                }
             }
             ASTNode::GreaterThan(left, right) => {
                 let left_val = self.evaluate(*left);

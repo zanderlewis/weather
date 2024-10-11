@@ -3,6 +3,7 @@ temp = 0
 humidity = 70
 fahrenheit = 86
 celsius = 35
+kelvin = 300
 
 # Calculate and print the dew point
 dew_point = dewpoint(temp, humidity)
@@ -18,6 +19,26 @@ print(celsius_converted)
 fahrenheit_converted = ctof(celsius)
 print("Celsius to Fahrenheit: ")
 print(fahrenheit_converted)
+
+# Convert Celsius to Kelvin and print the result
+kelvin_converted = ctok(celsius)
+print("Celsius to Kelvin: ")
+print(kelvin_converted)
+
+# Convert Fahrenheit to Kelvin and print the result
+kelvin_converted = ftok(fahrenheit)
+print("Fahrenheit to Kelvin: ")
+print(kelvin_converted)
+
+# Convert Kelvin to Fahrenheit and print the result
+fahrenheit_converted = ktof(kelvin)
+print("Kelvin to Fahrenheit: ")
+print(fahrenheit_converted)
+
+# Convert Kelvin to Celsius and print the result
+celsius_converted = ktoc(kelvin)
+print("Kelvin to Celsius: ")
+print(celsius_converted)
 
 # Conditional statement example
 if (temp > 25) {

@@ -63,6 +63,10 @@ impl Parser {
             Token::DewPoint => self.parse_dew_point(),
             Token::FToC => self.parse_ftoc(),
             Token::CToF => self.parse_ctof(),
+            Token::CToK => self.parse_ctok(),
+            Token::KToC => self.parse_ktoc(),
+            Token::FToK => self.parse_ftok(),
+            Token::KToF => self.parse_ktof(),
             Token::LParen => {
                 self.consume(Token::LParen);
                 let expr = self.parse_expression();
@@ -103,6 +107,38 @@ impl Parser {
         let celsius = self.parse_expression();
         self.consume(Token::RParen);
         ASTNode::CToF(Box::new(celsius))
+    }
+
+    fn parse_ctok(&mut self) -> ASTNode {
+        self.consume(Token::CToK);
+        self.consume(Token::LParen);
+        let celsius = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::CToK(Box::new(celsius))
+    }
+
+    fn parse_ktoc(&mut self) -> ASTNode {
+        self.consume(Token::KToC);
+        self.consume(Token::LParen);
+        let kelvin = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::KToC(Box::new(kelvin))
+    }
+
+    fn parse_ftok(&mut self) -> ASTNode {
+        self.consume(Token::FToK);
+        self.consume(Token::LParen);
+        let fahrenheit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::FToK(Box::new(fahrenheit))
+    }
+
+    fn parse_ktof(&mut self) -> ASTNode {
+        self.consume(Token::KToF);
+        self.consume(Token::LParen);
+        let kelvin = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::KToF(Box::new(kelvin))
     }
 
     pub fn parse_statement(&mut self) -> ASTNode {

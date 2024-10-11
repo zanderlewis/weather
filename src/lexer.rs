@@ -77,6 +77,10 @@ impl Lexer {
             "dewpoint" => Token::DewPoint,
             "ftoc" => Token::FToC,
             "ctof" => Token::CToF,
+            "ctok" => Token::CToK,
+            "ktoc" => Token::KToC,
+            "ftok" => Token::FToK,
+            "ktof" => Token::KToF,
             _ => Token::Identifier(identifier),
         }
     }

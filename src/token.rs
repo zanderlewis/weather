@@ -23,5 +23,9 @@ pub enum Token {
     DewPoint,
     FToC,
     CToF,
+    CToK,
+    KToC,
+    FToK,
+    KToF,
     EOF,
 }
