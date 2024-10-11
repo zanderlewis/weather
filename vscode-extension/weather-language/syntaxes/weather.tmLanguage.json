@@ -1,0 +1,81 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Weather",
+    "patterns": [
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#functions"
+        },
+        {
+            "include": "#braces"
+        }
+    ],
+    "repository": {
+        "keywords": {
+            "patterns": [{
+                "name": "keyword.control.weather",
+                "match": "\\b(if|else|return|fn)\\b"
+            }]
+        },
+        "strings": {
+            "name": "string.quoted.double.weather",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.weather",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.number-sign.weather",
+                    "begin": "#",
+                    "end": "$"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.weather",
+                    "match": "\\b\\d+(\\.\\d+)?\\b"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.weather",
+                    "match": "\\bfn\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\b"
+                }
+            ]
+        },
+        "braces": {
+            "patterns": [
+                {
+                    "name": "punctuation.section.braces.begin.weather",
+                    "match": "\\{"
+                },
+                {
+                    "name": "punctuation.section.braces.end.weather",
+                    "match": "\\}"
+                }
+            ]
+        }
+    },
+    "scopeName": "source.weather"
+}
