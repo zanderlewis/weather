@@ -66,7 +66,7 @@ impl Interpreter {
 
     pub fn evaluate(&mut self, node: ASTNode) -> BigRational {
         match node {
-            ASTNode::Number(value) => BigRational::from(value),
+            ASTNode::Float(value) => BigRational::from_float(value.to_f64().unwrap()).unwrap(),
             ASTNode::Identifier(name) => {
                 let value = self.variables.get(&name).expect("Undefined variable").clone();
                 value

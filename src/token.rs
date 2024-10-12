@@ -1,8 +1,8 @@
-use num_bigint::BigInt;
+use num_rational::BigRational;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
-    Number(BigInt),
+    Float(BigRational),
     Identifier(String),
     Plus,
     Minus,

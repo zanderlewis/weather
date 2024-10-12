@@ -48,9 +48,9 @@ impl Parser {
 
     pub fn parse_factor(&mut self) -> ASTNode {
         match self.current_token.clone() {
-            Token::Number(value) => {
+            Token::Float(value) => {
                 self.current_token = self.lexer.next_token();
-                ASTNode::Number(value)
+                ASTNode::Float(value)
             }
             Token::Identifier(name) => {
                 self.current_token = self.lexer.next_token();

@@ -1,5 +1,6 @@
 use crate::token::Token;
 use num_bigint::BigInt;
+use num_rational::BigRational;
 
 pub struct Lexer {
     input: Vec<char>,
@@ -36,7 +37,7 @@ impl Lexer {
             '(' => Token::LParen,
             ')' => Token::RParen,
             '"' => self.read_string_literal(),
-            '0'..='9' => self.read_number(ch),
+            '0'..='9' | '.' => self.read_number(ch),
             'a'..='z' | 'A'..='Z' | '_' => self.read_identifier(ch),
             ',' => Token::Comma,
             '#' => {
@@ -55,13 +56,23 @@ impl Lexer {
         }
     }
 
-    pub fn read_number(&mut self, first_char: char) -> Token {
+    fn read_number(&mut self, first_char: char) -> Token {
         let mut number = first_char.to_string();
-        while self.position < self.input.len() && self.input[self.position].is_digit(10) {
+        let mut is_float = false;
+
+        while self.position < self.input.len() && (self.input[self.position].is_digit(10) || self.input[self.position] == '.') {
+            if self.input[self.position] == '.' {
+                is_float = true;
+            }
             number.push(self.input[self.position]);
             self.position += 1;
         }
-        Token::Number(BigInt::parse_bytes(number.as_bytes(), 10).unwrap())
+
+        if is_float {
+            Token::Float(BigRational::from_float(number.parse::<f64>().unwrap()).unwrap())
+        } else {
+            Token::Float(BigRational::from_integer(number.parse::<BigInt>().unwrap()))
+        }
     }
 
     pub fn read_identifier(&mut self, first_char: char) -> Token {
