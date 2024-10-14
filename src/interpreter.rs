@@ -11,12 +11,14 @@ use crate::constants::*;
 
 pub struct Interpreter {
     variables: HashMap<String, BigRational>,
+    functions: HashMap<String, ASTNode>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
         Self {
             variables: HashMap::new(),
+            functions: HashMap::new(),
         }
     }
 
@@ -59,6 +61,29 @@ impl Interpreter {
                 nodes.into_par_iter().for_each(|node| {
                     Interpreter::execute(interpreter.clone(), node);
                 });
+            }
+            ASTNode::Function(name, params, body) => {
+                let mut interpreter = interpreter.lock().unwrap();
+                let name_clone = name.clone();
+                interpreter.functions.insert(name_clone, ASTNode::Function(name, params.clone(), body.clone()));
+            }
+            ASTNode::FunctionCall(name, args) => {
+                let mut interpreter = interpreter.lock().unwrap();
+                let function = interpreter.functions.get(&name).expect("Undefined function").clone();
+                if let ASTNode::Function(_, params, body) = function {
+                    let mut variables = interpreter.variables.clone();
+                    for (param, arg) in params.iter().zip(args.iter()) {
+                        let value = interpreter.evaluate(arg.clone());
+                        variables.insert(param.clone(), value);
+                    }
+                    let interpreter = Interpreter {
+                        variables,
+                        functions: interpreter.functions.clone(),
+                    };
+                    Interpreter::execute(Arc::new(Mutex::new(interpreter)), *body);
+                } else {
+                    panic!("Expected function, got {:?}", function);
+                }
             }
             _ => panic!("Unexpected AST node: {:?}", node),
         }
@@ -114,6 +139,23 @@ impl Interpreter {
             ASTNode::KToF(kelvin) => {
                 let kelvin = self.evaluate(*kelvin);
                 (kelvin - kelvin_constant()) * BigRational::new(BigInt::from(9), BigInt::from(5)) + BigRational::from_integer(BigInt::from(32))
+            }
+            ASTNode::FunctionCall(name, args) => {
+                let function = self.functions.get(&name).expect("Undefined function").clone();
+                if let ASTNode::Function(_, params, body) = function {
+                    let mut variables = self.variables.clone();
+                    for (param, arg) in params.iter().zip(args.iter()) {
+                        let value = self.evaluate(arg.clone());
+                        variables.insert(param.clone(), value);
+                    }
+                    let mut interpreter = Interpreter {
+                        variables,
+                        functions: self.functions.clone(),
+                    };
+                    interpreter.evaluate(*body)
+                } else {
+                    panic!("Expected function, got {:?}", function);
+                }
             }
             ASTNode::Pi => pi_constant(),
             ASTNode::Kelvin => kelvin_constant(),

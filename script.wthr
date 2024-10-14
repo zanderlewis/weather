@@ -4,6 +4,16 @@ fahrenheit = 82  # Current temperature in Fahrenheit
 celsius = 28  # Current temperature in Celsius
 kelvin = 301  # Current temperature in Kelvin
 
+fn heat_index(temp, humidity) {
+    # Calculate the heat index
+    heat_index = 0 - 8.78469475556 + 1.61139411 * temp + 2.33854883889 * humidity - 0.14611605 * temp * humidity - 0.012308094 * temp * temp - 0.0164248277778 * humidity * humidity + 0.002211732 * temp * temp * humidity + 0.00072546 * temp * humidity * humidity - 0.000003582 * temp * temp * humidity * humidity
+    print("Heat Index: ")
+    print(heat_index)
+}
+
+# Function calling is currently a work in progress
+# heat_index(temp, humidity)
+
 # Calculate and print the dew point
 dew_point = dewpoint(temp, humidity)
 print("Dew Point: ")

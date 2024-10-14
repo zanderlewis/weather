@@ -4,6 +4,7 @@ use num_rational::BigRational;
 pub enum Token {
     Float(BigRational),
     Identifier(String),
+    Function,
     Plus,
     Minus,
     Star,

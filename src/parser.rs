@@ -5,33 +5,31 @@ use crate::ast::ASTNode;
 pub struct Parser {
     lexer: Lexer,
     current_token: Token,
+    line: usize,
 }
 
 impl Parser {
     pub fn new(mut lexer: Lexer) -> Self {
         let current_token = lexer.next_token();
-        Self { lexer, current_token }
+        let line = lexer.line;
+        Self { lexer, current_token , line }
     }
 
     fn consume(&mut self, expected: Token) {
         if self.current_token == expected {
             self.current_token = self.lexer.next_token();
+            self.line = self.lexer.line;
         } else {
-            panic!("Expected token: {:?}, found: {:?}", expected, self.current_token);
+            panic!("Expected token '{:?}', found '{:?}' on line {}.", expected, self.current_token, self.line);
         }
     }
 
     pub fn parse_expression(&mut self) -> ASTNode {
         let mut node = self.parse_term();
-        while matches!(self.current_token, Token::Plus | Token::Minus | Token::GreaterThan | Token::LessThan) {
+        while matches!(self.current_token, Token::Plus | Token::Minus) {
             let token = self.current_token.clone();
-            self.current_token = self.lexer.next_token();
-            node = match token {
-                Token::Plus | Token::Minus => ASTNode::BinaryOp(Box::new(node), token, Box::new(self.parse_term())),
-                Token::GreaterThan => ASTNode::GreaterThan(Box::new(node), Box::new(self.parse_term())),
-                Token::LessThan => ASTNode::LessThan(Box::new(node), Box::new(self.parse_term())),
-                _ => panic!("Unexpected token: {:?}", token),
-            };
+            self.consume(token.clone());
+            node = ASTNode::BinaryOp(Box::new(node), token, Box::new(self.parse_term()));
         }
         node
     }
@@ -40,7 +38,7 @@ impl Parser {
         let mut node = self.parse_factor();
         while matches!(self.current_token, Token::Star | Token::Slash) {
             let token = self.current_token.clone();
-            self.current_token = self.lexer.next_token();
+            self.consume(token.clone());
             node = ASTNode::BinaryOp(Box::new(node), token, Box::new(self.parse_factor()));
         }
         node
@@ -49,15 +47,20 @@ impl Parser {
     pub fn parse_factor(&mut self) -> ASTNode {
         match self.current_token.clone() {
             Token::Float(value) => {
-                self.current_token = self.lexer.next_token();
-                ASTNode::Float(value)
+                let value_clone = value.clone();
+                self.consume(Token::Float(value));
+                ASTNode::Float(value_clone)
             }
             Token::Identifier(name) => {
-                self.current_token = self.lexer.next_token();
-                ASTNode::Identifier(name)
+                self.consume(Token::Identifier(name.clone()));
+                if self.current_token == Token::LParen {
+                    self.parse_function_call(name)
+                } else {
+                    ASTNode::Identifier(name)
+                }
             }
             Token::StringLiteral(value) => {
-                self.current_token = self.lexer.next_token();
+                self.consume(Token::StringLiteral(value.clone()));
                 ASTNode::StringLiteral(value)
             }
             Token::DewPoint => self.parse_dew_point(),
@@ -115,12 +118,52 @@ impl Parser {
             }
             Token::LBrace => {
                 self.consume(Token::LBrace);
-                let expr = self.parse_expression();
-                self.consume(Token::RBrace);
-                expr
+                let block = self.parse_block();
+                ASTNode::Block(block)
             }
-            _ => panic!("Unexpected token: {:?}", self.current_token),
+            _ => panic!("Unexpected token '{:?}' on line {}.", self.current_token, self.line),
         }
+    }
+
+    pub fn parse_function_definition(&mut self) -> ASTNode {
+        self.consume(Token::Function);
+        let name = if let Token::Identifier(name) = self.current_token.clone() {
+            self.consume(Token::Identifier(name.clone()));
+            name
+        } else {
+            panic!("Expected function name on line {}.", self.line);
+        };
+        self.consume(Token::LParen);
+        let mut params = Vec::new();
+        while self.current_token != Token::RParen {
+            if let Token::Identifier(param) = self.current_token.clone() {
+                self.consume(Token::Identifier(param.clone()));
+                params.push(param);
+                if self.current_token == Token::Comma {
+                    self.consume(Token::Comma);
+                }
+            } else {
+                panic!("Expected parameter name on line {}.", self.line);
+            }
+        }
+        self.consume(Token::RParen);
+        self.consume(Token::LBrace);
+        let body = self.parse_block();
+        ASTNode::Function(name, params, Box::new(ASTNode::Block(body)))
+    }
+
+    pub fn parse_function_call(&mut self, name: String) -> ASTNode {
+        self.consume(Token::LParen);
+        let mut args = Vec::new();
+        while self.current_token != Token::RParen {
+            let arg = self.parse_expression();
+            args.push(arg);
+            if self.current_token == Token::Comma {
+                self.consume(Token::Comma);
+            }
+        }
+        self.consume(Token::RParen);
+        ASTNode::FunctionCall(name, args)
     }
 
     fn parse_dew_point(&mut self) -> ASTNode {
@@ -186,14 +229,20 @@ impl Parser {
             Token::Identifier(_) => self.parse_assignment(),
             Token::Print => self.parse_print(),
             Token::If => self.parse_if(),
-            _ => panic!("Unexpected token: {:?}", self.current_token),
+            Token::Function => self.parse_function_definition(),
+            Token::LBrace => {
+                self.consume(Token::LBrace);
+                let block = self.parse_block();
+                ASTNode::Block(block)
+            }
+            _ => panic!("Unexpected token '{:?}' on line {}.", self.current_token, self.line),
         }
     }
 
     pub fn parse_assignment(&mut self) -> ASTNode {
         let name = match self.current_token.clone() {
             Token::Identifier(name) => name,
-            _ => panic!("Expected identifier"),
+            _ => panic!("Expected identifier on line {}.", self.line),
         };
         self.consume(Token::Identifier(name.clone()));
         self.consume(Token::Assign);
@@ -222,11 +271,11 @@ impl Parser {
             self.consume(Token::LBrace);
             let else_branch = self.parse_block();
             self.consume(Token::RBrace);
-            Some(Box::new(else_branch))
+            Some(Box::new(ASTNode::Block(else_branch)))
         } else {
             None
         };
-        ASTNode::If(Box::new(condition), Box::new(ASTNode::Block(then_branch)), else_branch.map(|b| Box::new(ASTNode::Block(*b))))
+        ASTNode::If(Box::new(condition), Box::new(ASTNode::Block(then_branch)), else_branch)
     }
 
     pub fn parse_block(&mut self) -> Vec<ASTNode> {
@@ -234,6 +283,7 @@ impl Parser {
         while self.current_token != Token::RBrace && self.current_token != Token::EOF {
             nodes.push(self.parse_statement());
         }
+        self.consume(Token::RBrace);
         nodes
     }
 

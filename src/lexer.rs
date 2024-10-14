@@ -5,6 +5,7 @@ use num_rational::BigRational;
 pub struct Lexer {
     input: Vec<char>,
     position: usize,
+    pub line: usize,
 }
 
 impl Lexer {
@@ -12,6 +13,7 @@ impl Lexer {
         Self {
             input: input.chars().collect(),
             position: 0,
+            line: 1,
         }
     }
 
@@ -46,12 +48,19 @@ impl Lexer {
                 }
                 self.next_token()
             }
-            _ => panic!("Unexpected character: {}", ch),
+            '\n' => {
+                self.line += 1;
+                self.next_token()
+            }
+            _ => panic!("Unexpected character '{}' on line {}.", ch, self.line),
         }
     }
 
     pub fn skip_whitespace(&mut self) {
         while self.position < self.input.len() && self.input[self.position].is_whitespace() {
+            if self.input[self.position] == '\n' {
+                self.line += 1;
+            }
             self.position += 1;
         }
     }
@@ -92,6 +101,7 @@ impl Lexer {
             "ktoc" => Token::KToC,
             "ftok" => Token::FToK,
             "ktof" => Token::KToF,
+            "fn" => Token::Function,
             "_pi_" => Token::Pi,
             "_kelvin_" => Token::Kelvin,
             "_rd_" => Token::RD,
