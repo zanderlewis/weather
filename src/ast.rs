@@ -12,6 +12,7 @@ pub enum ASTNode {
     Assignment(String, Box<ASTNode>),
     Call(String, Vec<ASTNode>),
     Function(String, Vec<String>, Box<ASTNode>),
+    Import(String),
     Print(Box<ASTNode>),
     If(Box<ASTNode>, Box<ASTNode>, Option<Box<ASTNode>>), // condition, then, else
     DewPoint(Box<ASTNode>, Box<ASTNode>), // temperature, humidity

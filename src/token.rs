@@ -5,6 +5,7 @@ pub enum Token {
     Float(BigRational),
     Identifier(String),
     Function,
+    Import,
     Call,
     Plus,
     Minus,

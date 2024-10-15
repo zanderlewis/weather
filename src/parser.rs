@@ -255,6 +255,7 @@ impl Parser {
             Token::Print => self.parse_print(),
             Token::If => self.parse_if(),
             Token::Function => self.parse_function_definition(),
+            Token::Import => self.parse_import(),
             Token::Call => self.parse_call(),
             Token::LBrace => {
                 self.consume(Token::LBrace);
@@ -282,6 +283,16 @@ impl Parser {
         let expr = self.parse_expression();
         self.consume(Token::RParen);
         ASTNode::Print(Box::new(expr))
+    }
+    pub fn parse_import(&mut self) -> ASTNode {
+        self.consume(Token::Import);
+        let module_name = if let Token::StringLiteral(name) = self.current_token.clone() {
+            self.consume(Token::StringLiteral(name.clone()));
+            name + ".wthr"
+        } else {
+            panic!("Expected module name on line {}.", self.line);
+        };
+        ASTNode::Import(module_name)
     }
 
     pub fn parse_if(&mut self) -> ASTNode {

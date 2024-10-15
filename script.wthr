@@ -1,3 +1,6 @@
+import "math"
+call(add(5, 10))  # Importing the function from math.wthr
+
 temp = 28.37  # Current temperature in Celsius
 humidity = 75  # Current humidity percentage
 fahrenheit = 82  # Current temperature in Fahrenheit

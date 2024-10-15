@@ -103,6 +103,7 @@ impl Lexer {
             "ftok" => Token::FToK,
             "ktof" => Token::KToF,
             "fn" => Token::Function,
+            "import" => Token::Import,
             "_pi_" => Token::Pi,
             "_kelvin_" => Token::Kelvin,
             "_rd_" => Token::RD,

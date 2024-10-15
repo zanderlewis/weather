@@ -14,3 +14,6 @@ num-bigint = "^0.4.6"
 num-traits = "^0.2.19"
 num-rational = "^0.4.0"
 rayon = "^1.5.1"
+
+[profile.dev]
+opt-level = 3

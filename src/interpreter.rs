@@ -26,11 +26,11 @@ impl Interpreter {
         match node {
             ASTNode::Assignment(name, expr) => {
                 let value = {
-                    let mut interpreter = interpreter.lock().unwrap();
-                    interpreter.evaluate(*expr)
+                    let mut guard = interpreter.lock().unwrap();
+                    guard.evaluate(*expr)
                 };
-                let mut interpreter = interpreter.lock().unwrap();
-                interpreter.variables.insert(name, value);
+                let mut guard = interpreter.lock().unwrap();
+                guard.variables.insert(name, value);
             }
             ASTNode::Print(expr) => {
                 match *expr {
@@ -39,8 +39,8 @@ impl Interpreter {
                     }
                     _ => {
                         let value = {
-                            let mut interpreter = interpreter.lock().unwrap();
-                            interpreter.evaluate(*expr)
+                            let mut guard = interpreter.lock().unwrap();
+                            guard.evaluate(*expr)
                         };
                         println!("{}", value.to_f64().unwrap());
                     }
@@ -48,8 +48,8 @@ impl Interpreter {
             }
             ASTNode::If(condition, then_branch, else_branch) => {
                 let condition_result = {
-                    let mut interpreter = interpreter.lock().unwrap();
-                    interpreter.evaluate(*condition)
+                    let mut guard = interpreter.lock().unwrap();
+                    guard.evaluate(*condition)
                 };
                 if condition_result != BigRational::from(BigInt::from(0)) {
                     Interpreter::execute(interpreter.clone(), *then_branch);
@@ -63,26 +63,48 @@ impl Interpreter {
                 });
             }
             ASTNode::Function(name, params, body) => {
-                let mut interpreter = interpreter.lock().unwrap();
+                let mut guard = interpreter.lock().unwrap();
                 let name_clone = name.clone();
-                interpreter.functions.insert(name_clone, ASTNode::Function(name, params.clone(), body.clone()));
+                guard.functions.insert(name_clone, ASTNode::Function(name, params.clone(), body.clone()));
             }
             ASTNode::Call(name, args) => {
-                let mut interpreter = interpreter.lock().unwrap();
-                let function = interpreter.functions.get(&name).expect("Undefined function").clone();
+                let mut guard = interpreter.lock().unwrap();
+                let function = guard.functions.get(&name).expect("Undefined function").clone();
                 if let ASTNode::Function(_, params, body) = function {
-                    let mut variables = interpreter.variables.clone();
+                    let mut variables = guard.variables.clone();
                     for (param, arg) in params.iter().zip(args.iter()) {
-                        let value = interpreter.evaluate(arg.clone());
+                        let value = guard.evaluate(arg.clone());
                         variables.insert(param.clone(), value);
                     }
                     let interpreter = Interpreter {
                         variables,
-                        functions: interpreter.functions.clone(),
+                        functions: guard.functions.clone(),
                     };
                     Interpreter::execute(Arc::new(Mutex::new(interpreter)), *body);
                 } else {
                     panic!("Expected function, got {:?}", function);
+                }
+            }
+            ASTNode::Import(module_name) => {
+                // Load and parse the module file
+                let module_content = std::fs::read_to_string(module_name.clone()).expect("Failed to read module file");
+                let lexer = crate::lexer::Lexer::new(module_content);
+                let mut parser = crate::parser::Parser::new(lexer);
+                let nodes = parser.parse();
+
+                // Execute the parsed nodes
+                let imported_interpreter = Arc::new(Mutex::new(Interpreter::new()));
+                nodes.into_par_iter().for_each(|node| {
+                    Interpreter::execute(imported_interpreter.clone(), node);
+                });
+
+                // Merge imported functions into the current interpreter
+                let imported_guard = imported_interpreter.lock().unwrap();
+                let functions_to_merge: Vec<_> = imported_guard.functions.clone().into_iter().collect();
+                drop(imported_guard); // Release the lock before re-acquiring it
+                let mut guard = interpreter.lock().unwrap();
+                for (name, function) in functions_to_merge {
+                    guard.functions.insert(name, function);
                 }
             }
             _ => panic!("Unexpected AST node: {:?}", node),
@@ -162,6 +184,21 @@ impl Interpreter {
                 } else {
                     panic!("Expected function, got {:?}", function);
                 }
+            }
+            ASTNode::Import(module_name) => {
+                // Load and parse the module file
+                let module_content = std::fs::read_to_string(module_name).expect("Failed to read module file");
+                let lexer = crate::lexer::Lexer::new(module_content);
+                let mut parser = crate::parser::Parser::new(lexer);
+                let nodes = parser.parse();
+
+                // Execute the parsed nodes
+                let imported_interpreter = Arc::new(Mutex::new(Interpreter::new()));
+                let results: Vec<BigRational> = nodes.into_iter().map(|node| {
+                                    Interpreter::execute(imported_interpreter.clone(), node.clone());
+                                    imported_interpreter.lock().unwrap().evaluate(node)
+                                }).collect();
+                results.last().cloned().unwrap_or_else(|| BigRational::from_integer(BigInt::from(0)))
             }
             ASTNode::Pi => pi_constant(),
             ASTNode::Kelvin => kelvin_constant(),
