@@ -1,6 +1,5 @@
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use rayon::prelude::*;
 use crate::ast::ASTNode;
 use crate::token::Token;
 use std::collections::HashMap;
@@ -58,9 +57,9 @@ impl Interpreter {
                 }
             }
             ASTNode::Block(nodes) => {
-                nodes.into_par_iter().for_each(|node| {
+                for node in nodes {
                     Interpreter::execute(interpreter.clone(), node);
-                });
+                }
             }
             ASTNode::Function(name, params, body) => {
                 let mut guard = interpreter.lock().unwrap();
@@ -94,9 +93,9 @@ impl Interpreter {
 
                 // Execute the parsed nodes
                 let imported_interpreter = Arc::new(Mutex::new(Interpreter::new()));
-                nodes.into_par_iter().for_each(|node| {
+                for node in nodes {
                     Interpreter::execute(imported_interpreter.clone(), node);
-                });
+                }
 
                 // Merge imported functions into the current interpreter
                 let imported_guard = imported_interpreter.lock().unwrap();
