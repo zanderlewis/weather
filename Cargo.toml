@@ -1,7 +1,13 @@
 [package]
-name = "weather"
+name = "wthr"
 version = "0.0.1"
 edition = "2021"
+license = "Apache-2.0"
+description = "An experimental programming language for weather calculations/applications."
+authors = ["Zander Lewis <zander@zanderlewis.dev>"]
+repository = "https://github.com/zanderlewis/weather"
+readme = "README.md"
+keywords = ["weather", "language", "experimental"]
 
 [dependencies]
 num-bigint = "^0.4.6"
