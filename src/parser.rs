@@ -26,7 +26,7 @@ impl Parser {
 
     pub fn parse_expression(&mut self) -> ASTNode {
         let mut node = self.parse_term();
-        while matches!(self.current_token, Token::Plus | Token::Minus) {
+        while matches!(self.current_token, Token::Plus | Token::Minus | Token::GreaterThan | Token::LessThan) {
             let token = self.current_token.clone();
             self.consume(token.clone());
             node = ASTNode::BinaryOp(Box::new(node), token, Box::new(self.parse_term()));
@@ -54,7 +54,17 @@ impl Parser {
             Token::Identifier(name) => {
                 self.consume(Token::Identifier(name.clone()));
                 if self.current_token == Token::LParen {
-                    self.parse_function_call(name)
+                    self.consume(Token::LParen);
+                    let mut args = Vec::new();
+                    while self.current_token != Token::RParen {
+                        let arg = self.parse_expression();
+                        args.push(arg);
+                        if self.current_token == Token::Comma {
+                            self.consume(Token::Comma);
+                        }
+                    }
+                    self.consume(Token::RParen);
+                    ASTNode::Call(name, args)
                 } else {
                     ASTNode::Identifier(name)
                 }
@@ -152,20 +162,6 @@ impl Parser {
         ASTNode::Function(name, params, Box::new(ASTNode::Block(body)))
     }
 
-    pub fn parse_function_call(&mut self, name: String) -> ASTNode {
-        self.consume(Token::LParen);
-        let mut args = Vec::new();
-        while self.current_token != Token::RParen {
-            let arg = self.parse_expression();
-            args.push(arg);
-            if self.current_token == Token::Comma {
-                self.consume(Token::Comma);
-            }
-        }
-        self.consume(Token::RParen);
-        ASTNode::FunctionCall(name, args)
-    }
-
     fn parse_dew_point(&mut self) -> ASTNode {
         self.consume(Token::DewPoint);
         self.consume(Token::LParen);
@@ -224,12 +220,42 @@ impl Parser {
         ASTNode::KToF(Box::new(kelvin))
     }
 
+    fn parse_call(&mut self) -> ASTNode {
+        // EXAMPLE: `call(heat_index(temperature, humidity))`
+        self.consume(Token::Call);
+        self.consume(Token::LParen);
+        let name = if let Token::Identifier(name) = self.current_token.clone() {
+            self.consume(Token::Identifier(name.clone()));
+            name
+        } else {
+            panic!("Expected function name on line {}.", self.line);
+        };
+        self.consume(Token::LParen);
+        let mut args = Vec::new();
+        while self.current_token != Token::RParen {
+            let arg = self.parse_expression();
+            args.push(arg);
+            if self.current_token == Token::Comma {
+                self.consume(Token::Comma);
+                if self.current_token == Token::RParen {
+                    panic!("Trailing comma found before closing parenthesis on line {}.", self.line);
+                }
+            } else if self.current_token != Token::RParen {
+                panic!("Expected token 'RParen' or 'Comma', found '{:?}' on line {}.", self.current_token, self.line);
+            }
+        }
+        self.consume(Token::RParen);
+        self.consume(Token::RParen);
+        ASTNode::Call(name, args)
+    }
+
     pub fn parse_statement(&mut self) -> ASTNode {
         match self.current_token.clone() {
             Token::Identifier(_) => self.parse_assignment(),
             Token::Print => self.parse_print(),
             Token::If => self.parse_if(),
             Token::Function => self.parse_function_definition(),
+            Token::Call => self.parse_call(),
             Token::LBrace => {
                 self.consume(Token::LBrace);
                 let block = self.parse_block();
@@ -265,12 +291,10 @@ impl Parser {
         self.consume(Token::RParen);
         self.consume(Token::LBrace);
         let then_branch = self.parse_block();
-        self.consume(Token::RBrace);
         let else_branch = if self.current_token == Token::Else {
             self.consume(Token::Else);
             self.consume(Token::LBrace);
             let else_branch = self.parse_block();
-            self.consume(Token::RBrace);
             Some(Box::new(ASTNode::Block(else_branch)))
         } else {
             None
