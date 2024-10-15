@@ -91,6 +91,7 @@ impl Lexer {
             self.position += 1;
         }
         match identifier.as_str() {
+            "call" => Token::Call,
             "print" => Token::Print,
             "if" => Token::If,
             "else" => Token::Else,

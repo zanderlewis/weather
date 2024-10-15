@@ -11,8 +11,8 @@ fn heat_index(temp, humidity) {
     print(heat_index)
 }
 
-# Function calling is currently a work in progress
-# heat_index(temp, humidity)
+# Function calling uses the `call` keyword
+call(heat_index(temp, humidity))
 
 # Calculate and print the dew point
 dew_point = dewpoint(temp, humidity)

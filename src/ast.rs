@@ -10,7 +10,7 @@ pub enum ASTNode {
     StringLiteral(String),
     BinaryOp(Box<ASTNode>, Token, Box<ASTNode>),
     Assignment(String, Box<ASTNode>),
-    FunctionCall(String, Vec<ASTNode>),
+    Call(String, Vec<ASTNode>),
     Function(String, Vec<String>, Box<ASTNode>),
     Print(Box<ASTNode>),
     If(Box<ASTNode>, Box<ASTNode>, Option<Box<ASTNode>>), // condition, then, else

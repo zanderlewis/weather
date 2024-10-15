@@ -67,7 +67,7 @@ impl Interpreter {
                 let name_clone = name.clone();
                 interpreter.functions.insert(name_clone, ASTNode::Function(name, params.clone(), body.clone()));
             }
-            ASTNode::FunctionCall(name, args) => {
+            ASTNode::Call(name, args) => {
                 let mut interpreter = interpreter.lock().unwrap();
                 let function = interpreter.functions.get(&name).expect("Undefined function").clone();
                 if let ASTNode::Function(_, params, body) = function {
@@ -104,6 +104,12 @@ impl Interpreter {
                     Token::Minus => left_val - right_val,
                     Token::Star => left_val * right_val,
                     Token::Slash => left_val / right_val,
+                    Token::GreaterThan => {
+                        if left_val > right_val { BigRational::from_integer(BigInt::from(1)) } else { BigRational::from_integer(BigInt::from(0)) }
+                    }
+                    Token::LessThan => {
+                        if left_val < right_val { BigRational::from_integer(BigInt::from(1)) } else { BigRational::from_integer(BigInt::from(0)) }
+                    }
                     _ => panic!("Unexpected operator: {:?}", op),
                 }
             }
@@ -140,7 +146,7 @@ impl Interpreter {
                 let kelvin = self.evaluate(*kelvin);
                 (kelvin - kelvin_constant()) * BigRational::new(BigInt::from(9), BigInt::from(5)) + BigRational::from_integer(BigInt::from(32))
             }
-            ASTNode::FunctionCall(name, args) => {
+            ASTNode::Call(name, args) => {
                 let function = self.functions.get(&name).expect("Undefined function").clone();
                 if let ASTNode::Function(_, params, body) = function {
                     let mut variables = self.variables.clone();
