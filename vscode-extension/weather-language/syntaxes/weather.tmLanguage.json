@@ -19,6 +19,9 @@
         },
         {
             "include": "#braces"
+        },
+        {
+            "include": "#variables"
         }
     ],
     "repository": {
@@ -73,6 +76,14 @@
                 {
                     "name": "punctuation.section.braces.end.weather",
                     "match": "\\}"
+                }
+            ]
+        },
+        "variables": {
+            "patterns": [
+                {
+                    "name": "variable.other.weather",
+                    "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
                 }
             ]
         }

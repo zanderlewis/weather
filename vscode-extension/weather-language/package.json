@@ -7,7 +7,7 @@
     "url": "https://github.com/zanderlewis/weather"
   },
   "publisher": "zanderlewis",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.94.0"
   },
