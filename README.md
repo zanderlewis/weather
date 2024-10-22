@@ -34,6 +34,12 @@ cd qprime
 cargo run script.qpr
 ```
 
+or, you can install via Cargo:
+
+```bash
+cargo install qprime
+```
+
 ## Usage
 To use Q', write your code in a file with a `.qpr` extension and run it using the Q' interpreter. For example, to run a script called `script.qpr`, you would use the following command:
 
@@ -41,8 +47,14 @@ To use Q', write your code in a file with a `.qpr` extension and run it using th
 cargo run script.qpr
 ```
 
+or, if you installed Q' via Cargo:
+
+```bash
+qprime script.qpr
+```
+
 ## Syntax
-The syntax of Q' is similar to that of Python, with some improvements for weather applications. Here is an example:
+The syntax of Q' is similar to that of Python, with some improvements for quantum/weather applications. Here is an example:
 
 ```qpr
 # Assign values to variables
@@ -65,6 +77,27 @@ print(celsius_converted)
 fahrenheit_converted = ctof(celsius)
 print("Celsius to Fahrenheit: ")
 print(fahrenheit_converted)
+
+# Initialize 2 qubits
+q1 = qubit(0, 1) # State of |0>, 1 qubit
+q2 = qubit(1, 1) # State of |1>, 1 qubit
+
+# Apply Hadamard gate to qubit q1
+h = hadamard(q1)
+
+# Apply Pauli-X gate to qubit q1
+x = pauli_x(q1)
+
+# Apply CNOT gate to qubits q1 and q2
+_cnot = cnot(q1, q2)
+
+# Measure the CNOT gate
+m = measure(_cnot)
+
+# Print the result of the measurement
+print(m)
+print(q1)
+print(q2)
 ```
 
 ## Examples
