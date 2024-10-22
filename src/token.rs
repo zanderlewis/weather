@@ -40,5 +40,12 @@ pub enum Token {
     RhoAir,
     RhoWater,
     G,
+    PauliX,
+    PauliY,
+    PauliZ,
+    Hadamard,
+    CNot,
+    Qubit,
+    MeasureQubit,
     EOF,
 }

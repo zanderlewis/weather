@@ -1,0 +1,30 @@
+{
+  "name": "qprime-language",
+  "displayName": "Q' Language",
+  "description": "Adds support for the Q' programming language",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zanderlewis/qprime"
+  },
+  "publisher": "zanderlewis",
+  "version": "0.0.3",
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "qprime",
+      "aliases": ["Q'", "qprime", "qpr", "Q Prime"],
+      "extensions": [".qpr"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "qprime",
+      "scopeName": "source.qprime",
+      "path": "./syntaxes/qprime.tmLanguage.json"
+    }]
+  }
+}

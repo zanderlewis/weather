@@ -1,18 +1,21 @@
 [package]
-name = "wthr-lang"
-version = "0.0.3"
+name = "qprime"
+version = "0.0.4"
 edition = "2021"
 license = "Apache-2.0"
-description = "An experimental programming language for weather calculations/applications."
+description = "An experimental programming language for quantum and weather calculations/applications."
 authors = ["Zander Lewis <zander@zanderlewis.dev>"]
-repository = "https://github.com/zanderlewis/weather"
+repository = "https://github.com/zanderlewis/qprime"
 readme = "README.md"
-keywords = ["weather", "language", "experimental"]
+keywords = ["quantum", "language", "experimental", "weather"]
 
 [dependencies]
 num-bigint = "^0.4.6"
 num-traits = "^0.2.19"
 num-rational = "^0.4.0"
+nalgebra = "^0.30.0"
+num-complex = "^0.4"
+rand = "^0.8.4"
 
 [profile.dev]
 opt-level = 3

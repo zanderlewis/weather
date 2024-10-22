@@ -22,6 +22,13 @@ pub enum ASTNode {
     KToC(Box<ASTNode>), // kelvin -> celsius
     FToK(Box<ASTNode>), // fahrenheit -> kelvin
     KToF(Box<ASTNode>), // kelvin -> fahrenheit
+    PauliX(Box<ASTNode>),
+    PauliY(Box<ASTNode>),
+    PauliZ(Box<ASTNode>),
+    Hadamard(Box<ASTNode>),
+    CNot(Box<ASTNode>, Box<ASTNode>),
+    Qubit(Box<ASTNode>, Box<ASTNode>), // Create a qubit with a given state
+    MeasureQubit(Box<ASTNode>), // Measure a qubit
     Pi,
     Kelvin,
     RD,

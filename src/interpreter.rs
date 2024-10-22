@@ -167,6 +167,61 @@ impl Interpreter {
                 let kelvin = self.evaluate(*kelvin);
                 (kelvin - kelvin_constant()) * BigRational::new(BigInt::from(9), BigInt::from(5)) + BigRational::from_integer(BigInt::from(32))
             }
+            ASTNode::PauliX(qubit) => {
+                let qubit = self.evaluate(*qubit);
+                if qubit == BigRational::from_integer(BigInt::from(0)) {
+                    BigRational::from_integer(BigInt::from(1))
+                } else {
+                    BigRational::from_integer(BigInt::from(0))
+                }
+            }
+            ASTNode::PauliY(qubit) => {
+                let qubit = self.evaluate(*qubit);
+                if qubit == BigRational::from_integer(BigInt::from(0)) {
+                    BigRational::from_integer(BigInt::from(1))
+                } else {
+                    BigRational::from_integer(BigInt::from(-1))
+                }
+            }
+            ASTNode::PauliZ(qubit) => {
+                let qubit = self.evaluate(*qubit);
+                qubit
+            }
+            ASTNode::Hadamard(qubit) => {
+                let qubit = self.evaluate(*qubit);
+                (qubit + BigRational::from_integer(BigInt::from(1))) / BigRational::from_integer(BigInt::from(2))
+            }
+            ASTNode::CNot(control, target) => {
+                let control = self.evaluate(*control);
+                let target = self.evaluate(*target);
+                if control == BigRational::from_integer(BigInt::from(1)) {
+                    if target == BigRational::from_integer(BigInt::from(0)) {
+                        BigRational::from_integer(BigInt::from(1))
+                    } else {
+                        BigRational::from_integer(BigInt::from(0))
+                    }
+                } else {
+                    target
+                }
+            }
+            // Create number of qubits with the given state
+            ASTNode::Qubit(state, num_qubits) => {
+                let state = self.evaluate(*state);
+                let num_qubits = self.evaluate(*num_qubits);
+                let mut result = BigRational::from_integer(BigInt::from(0));
+                for _ in 0..num_qubits.to_usize().unwrap() {
+                    result = (result * BigRational::from_integer(BigInt::from(2))) + &state;
+                }
+                result
+            }
+            ASTNode::MeasureQubit(qubit) => {
+                let qubit = self.evaluate(*qubit);
+                if qubit == BigRational::from_integer(BigInt::from(0)) {
+                    BigRational::from_integer(BigInt::from(0))
+                } else {
+                    BigRational::from_integer(BigInt::from(1))
+                }
+            }
             ASTNode::Call(name, args) => {
                 let function = self.functions.get(&name).expect("Undefined function").clone();
                 if let ASTNode::Function(_, params, body) = function {

@@ -1,0 +1,19 @@
+q1 = qubit(0, 1) # State |0>, 1 qubit initialized
+q2 = qubit(1, 1) # State |1>, 1 qubit initialized
+
+# Apply Hadamard gate to qubit q1
+h = hadamard(q1)
+
+# Apply Pauli-X gate to qubit q1
+x = pauli_x(q1)
+
+# Apply CNOT gate to qubits q1 and q2
+_cnot = cnot(q1, q2)
+
+# Measure the CNOT gate
+m = measure(_cnot)
+
+# Print the result of the measurement
+print(m)
+print(q1)
+print(q2)

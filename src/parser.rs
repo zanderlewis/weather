@@ -80,6 +80,13 @@ impl Parser {
             Token::KToC => self.parse_ktoc(),
             Token::FToK => self.parse_ftok(),
             Token::KToF => self.parse_ktof(),
+            Token::PauliX => self.parse_paulix(),
+            Token::PauliY => self.parse_pauliy(),
+            Token::PauliZ => self.parse_pauliz(),
+            Token::Hadamard => self.parse_hadamard(),
+            Token::CNot => self.parse_cnot(),
+            Token::Qubit => self.parse_qubit(),
+            Token::MeasureQubit => self.parse_measure_qubit(),
             Token::Pi => {
                 self.consume(Token::Pi);
                 ASTNode::Pi
@@ -218,6 +225,66 @@ impl Parser {
         let kelvin = self.parse_expression();
         self.consume(Token::RParen);
         ASTNode::KToF(Box::new(kelvin))
+    }
+
+    fn parse_paulix(&mut self) -> ASTNode {
+        self.consume(Token::PauliX);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::PauliX(Box::new(qubit))
+    }
+
+    fn parse_pauliy(&mut self) -> ASTNode {
+        self.consume(Token::PauliY);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::PauliY(Box::new(qubit))
+    }
+
+    fn parse_pauliz(&mut self) -> ASTNode {
+        self.consume(Token::PauliZ);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::PauliZ(Box::new(qubit))
+    }
+
+    fn parse_hadamard(&mut self) -> ASTNode {
+        self.consume(Token::Hadamard);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::Hadamard(Box::new(qubit))
+    }
+
+    fn parse_cnot(&mut self) -> ASTNode {
+        self.consume(Token::CNot);
+        self.consume(Token::LParen);
+        let control = self.parse_expression();
+        self.consume(Token::Comma);
+        let target = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::CNot(Box::new(control), Box::new(target))
+    }
+
+    fn parse_qubit(&mut self) -> ASTNode {
+        self.consume(Token::Qubit);
+        self.consume(Token::LParen);
+        let state = self.parse_expression();
+        self.consume(Token::Comma);
+        let num_qubits = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::Qubit(Box::new(state), Box::new(num_qubits))
+    }
+
+    fn parse_measure_qubit(&mut self) -> ASTNode {
+        self.consume(Token::MeasureQubit);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::MeasureQubit(Box::new(qubit))
     }
 
     fn parse_call(&mut self) -> ASTNode {
