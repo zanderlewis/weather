@@ -13,6 +13,12 @@ jobs:
     # Reference your environment variables
     environment: cargo
 
+    strategy:
+      matrix:
+        include:
+          - dir: "/"
+            tag_prefix: "v"
+
     steps:
       - uses: actions/checkout@master
         with:
