@@ -5,6 +5,7 @@ use std::fs;
 mod token;     //
 mod ast;       //
 mod constants; //
+mod configs;   //
 /* ==== + ==== */
 
 mod lexer;
@@ -19,7 +20,7 @@ use interpreter::Interpreter;
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
-        eprintln!("Usage: {} <script>", args[0]);
+        eprintln!("Usage: {} <script.{}>", args[0], configs::FILE_EXTENSION);
         return;
     }
 

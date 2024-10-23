@@ -355,7 +355,7 @@ impl Parser {
         self.consume(Token::Import);
         let module_name = if let Token::StringLiteral(name) = self.current_token.clone() {
             self.consume(Token::StringLiteral(name.clone()));
-            name + ".wthr"
+            name + "." + crate::configs::FILE_EXTENSION
         } else {
             panic!("Expected module name on line {}.", self.line);
         };

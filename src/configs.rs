@@ -1,0 +1,1 @@
+pub const FILE_EXTENSION: &str = "qpr";
