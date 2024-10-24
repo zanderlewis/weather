@@ -19,6 +19,8 @@ s = s_gate(q1)
 t = t_gate(q1)
 _toffoli = toffoli(q1, q2, q1)
 _fredkin = fredkin(q1, q2, q1)
+q1 = swap_qubits(q1, q2)
+q2 = swap_qubits(q2, q1)
 
 # Print the result of the measurement
 print(m)

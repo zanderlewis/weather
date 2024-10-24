@@ -1,6 +1,11 @@
 import "math"
 call(add(5, 10))  # Importing the function from math.qpr
 
+# Modulo example
+mod = 7 % 4
+print("Modulo: ")
+print(mod)
+
 temp = 28.37  # Current temperature in Celsius
 humidity = 75  # Current humidity percentage
 fahrenheit = 82  # Current temperature in Fahrenheit
@@ -9,7 +14,7 @@ kelvin = 301.15  # Current temperature in Kelvin
 
 fn heat_index(temp, humidity) {
     # Calculate the heat index
-    heat_index = 0 - 8.78469475556 + 1.61139411 * temp + 2.33854883889 * humidity - 0.14611605 * temp * humidity - 0.012308094 * temp * temp - 0.0164248277778 * humidity * humidity + 0.002211732 * temp * temp * humidity + 0.00072546 * temp * humidity * humidity - 0.000003582 * temp * temp * humidity * humidity
+    heat_index = 0 - 8.78469475556 + 1.61139411 * temp + 2.33854883889 * humidity - 0.14611605 * temp * humidity - 0.012308094 * temp ** 2 - 0.0164248277778 * humidity **2 + 0.002211732 * temp **2 * humidity + 0.00072546 * temp * humidity ** 2 - 0.000003582 * temp ** 2 * humidity ** 2
     print("Heat Index: ")
     print(heat_index)
 }

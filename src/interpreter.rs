@@ -52,9 +52,9 @@ impl Interpreter {
                     guard.evaluate(*condition)
                 };
                 if condition_result != BigRational::from(BigInt::from(0)).into() {
-                    Interpreter::execute(interpreter.clone(), *then_branch);
+                    Interpreter::execute(interpreter, *then_branch);
                 } else if let Some(else_branch) = else_branch {
-                    Interpreter::execute(interpreter.clone(), *else_branch);
+                    Interpreter::execute(interpreter, *else_branch);
                 }
             }
             ASTNode::Block(nodes) => {
@@ -65,7 +65,7 @@ impl Interpreter {
             ASTNode::Function(name, params, body) => {
                 let mut guard = interpreter.lock().unwrap();
                 let name_clone = name.clone();
-                guard.functions.insert(name_clone, ASTNode::Function(name, params.clone(), body.clone()));
+                guard.functions.insert(name_clone, ASTNode::Function(name, params, body));
             }
             ASTNode::Call(name, args) => {
                 let mut guard = interpreter.lock().unwrap();
@@ -87,7 +87,7 @@ impl Interpreter {
             }
             ASTNode::Import(module_name) => {
                 // Load and parse the module file
-                let module_content = std::fs::read_to_string(module_name.clone()).expect("Failed to read module file");
+                let module_content = std::fs::read_to_string(module_name).expect("Failed to read module file");
                 let lexer = crate::lexer::Lexer::new(module_content);
                 let mut parser = crate::parser::Parser::new(lexer);
                 let nodes = parser.parse();
@@ -125,7 +125,18 @@ impl Interpreter {
                     Token::Plus => left_val + right_val,
                     Token::Minus => left_val - right_val,
                     Token::Star => left_val * right_val,
+                    Token::StarStar => {
+                        let exponent = right_val.re.to_f64().unwrap();
+                        let base = left_val.re.to_f64().unwrap();
+                        let result = base.powf(exponent);
+                        BigRational::from_float(result).unwrap().into()
+                    },
                     Token::Slash => left_val / right_val,
+                    Token::Modulo => {
+                        let left_val = left_val.re.to_integer();
+                        let right_val = right_val.re.to_integer();
+                        BigRational::from_integer(left_val % right_val).into()
+                    }
                     Token::GreaterThan => {
                         if left_val.re > right_val.re { BigRational::from_integer(BigInt::from(1)).into() } else { BigRational::from_integer(BigInt::from(0)).into() }
                     }

@@ -36,7 +36,7 @@ impl Parser {
 
     pub fn parse_term(&mut self) -> ASTNode {
         let mut node = self.parse_factor();
-        while matches!(self.current_token, Token::Star | Token::Slash) {
+        while matches!(self.current_token, Token::Star | Token::Slash | Token::StarStar | Token::Modulo) {
             let token = self.current_token.clone();
             self.consume(token.clone());
             node = ASTNode::BinaryOp(Box::new(node), token, Box::new(self.parse_factor()));

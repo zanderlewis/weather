@@ -29,8 +29,16 @@ impl Lexer {
         match ch {
             '+' => Token::Plus,
             '-' => Token::Minus,
-            '*' => Token::Star,
+            '*' => {
+                if self.position < self.input.len() && self.input[self.position] == '*' {
+                    self.position += 1;
+                    Token::StarStar
+                } else {
+                    Token::Star
+                }
+            }
             '/' => Token::Slash,
+            '%' => Token::Modulo,
             '>' => Token::GreaterThan,
             '<' => Token::LessThan,
             '=' => Token::Assign,
