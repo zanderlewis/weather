@@ -5,7 +5,7 @@ temp = 28.37  # Current temperature in Celsius
 humidity = 75  # Current humidity percentage
 fahrenheit = 82  # Current temperature in Fahrenheit
 celsius = 28  # Current temperature in Celsius
-kelvin = 301  # Current temperature in Kelvin
+kelvin = 301.15  # Current temperature in Kelvin
 
 fn heat_index(temp, humidity) {
     # Calculate the heat index

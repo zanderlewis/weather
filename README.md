@@ -101,7 +101,7 @@ print(q2)
 ```
 
 ## Examples
-[script.qpr](script.qpr) and [quantum.qpr](quantum.qpr) are good places to start.
+[script.qpr](examples/import/script.qpr) and [quantum.qpr](examples/quantum.qpr) are good places to start.
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request if you would like to contribute to Q'.
