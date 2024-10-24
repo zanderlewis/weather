@@ -1,5 +1,5 @@
 import "math"
-call(add(5, 10))  # Importing the function from math.wthr
+call(add(5, 10))  # Importing the function from math.qpr
 
 temp = 28.37  # Current temperature in Celsius
 humidity = 75  # Current humidity percentage

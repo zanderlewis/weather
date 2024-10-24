@@ -13,7 +13,22 @@ _cnot = cnot(q1, q2)
 # Measure the CNOT gate
 m = measure(_cnot)
 
+# Use Phase, S, T, Toffoli, and Fredkin gates
+p = phase(q1)
+s = s_gate(q1)
+t = t_gate(q1)
+_toffoli = toffoli(q1, q2, q1)
+_fredkin = fredkin(q1, q2, q1)
+
 # Print the result of the measurement
 print(m)
 print(q1)
 print(q2)
+print(h)
+print(x)
+print(_cnot)
+print(p)
+print(s)
+print(t)
+print(_toffoli)
+print(_fredkin)
