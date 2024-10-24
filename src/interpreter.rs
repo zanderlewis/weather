@@ -5,11 +5,12 @@ use crate::token::Token;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use num_traits::ToPrimitive;
+use num_complex::Complex;
 
 use crate::constants::*;
 
 pub struct Interpreter {
-    variables: HashMap<String, BigRational>,
+    variables: HashMap<String, Complex<BigRational>>,
     functions: HashMap<String, ASTNode>,
 }
 
@@ -29,7 +30,7 @@ impl Interpreter {
                     guard.evaluate(*expr)
                 };
                 let mut guard = interpreter.lock().unwrap();
-                guard.variables.insert(name, value);
+                guard.variables.insert(name, value.into());
             }
             ASTNode::Print(expr) => {
                 match *expr {
@@ -50,7 +51,7 @@ impl Interpreter {
                     let mut guard = interpreter.lock().unwrap();
                     guard.evaluate(*condition)
                 };
-                if condition_result != BigRational::from(BigInt::from(0)) {
+                if condition_result != BigRational::from(BigInt::from(0)).into() {
                     Interpreter::execute(interpreter.clone(), *then_branch);
                 } else if let Some(else_branch) = else_branch {
                     Interpreter::execute(interpreter.clone(), *else_branch);
@@ -73,7 +74,7 @@ impl Interpreter {
                     let mut variables = guard.variables.clone();
                     for (param, arg) in params.iter().zip(args.iter()) {
                         let value = guard.evaluate(arg.clone());
-                        variables.insert(param.clone(), value);
+                        variables.insert(param.clone(), value.into());
                     }
                     let interpreter = Interpreter {
                         variables,
@@ -110,9 +111,9 @@ impl Interpreter {
         }
     }
 
-    pub fn evaluate(&mut self, node: ASTNode) -> BigRational {
+    pub fn evaluate(&mut self, node: ASTNode) -> Complex<BigRational> {
         match node {
-            ASTNode::Float(value) => BigRational::from_float(value.to_f64().unwrap()).unwrap(),
+            ASTNode::Float(value) => BigRational::from_float(value.to_f64().unwrap()).unwrap().into(),
             ASTNode::Identifier(name) => {
                 let value = self.variables.get(&name).expect("Undefined variable").clone();
                 value
@@ -126,10 +127,10 @@ impl Interpreter {
                     Token::Star => left_val * right_val,
                     Token::Slash => left_val / right_val,
                     Token::GreaterThan => {
-                        if left_val > right_val { BigRational::from_integer(BigInt::from(1)) } else { BigRational::from_integer(BigInt::from(0)) }
+                        if left_val.re > right_val.re { BigRational::from_integer(BigInt::from(1)).into() } else { BigRational::from_integer(BigInt::from(0)).into() }
                     }
                     Token::LessThan => {
-                        if left_val < right_val { BigRational::from_integer(BigInt::from(1)) } else { BigRational::from_integer(BigInt::from(0)) }
+                        if left_val.re < right_val.re { BigRational::from_integer(BigInt::from(1)).into() } else { BigRational::from_integer(BigInt::from(0)).into() }
                     }
                     _ => panic!("Unexpected operator: {:?}", op),
                 }
@@ -140,8 +141,9 @@ impl Interpreter {
                 // Dew point calculation formula
                 let a = BigRational::new(BigInt::from(1727), BigInt::from(100));
                 let b = BigRational::new(BigInt::from(2377), BigInt::from(10));
-                let alpha = ((a.clone() * temp.clone()) / (b.clone() + temp.clone())) + BigRational::from_float(humidity.to_f64().unwrap().ln()).unwrap();
-                (b * alpha.clone()) / (a - alpha)
+                let temp_re = temp.re.clone();
+                let alpha = ((a.clone() * temp_re.clone()) / (b.clone() + temp_re)) + BigRational::from_float(humidity.to_f64().unwrap().ln()).unwrap();
+                ((b * alpha.clone()) / (a - alpha)).into()
             }
             ASTNode::FToC(fahrenheit) => {
                 let fahrenheit = self.evaluate(*fahrenheit);
@@ -169,18 +171,18 @@ impl Interpreter {
             }
             ASTNode::PauliX(qubit) => {
                 let qubit = self.evaluate(*qubit);
-                if qubit == BigRational::from_integer(BigInt::from(0)) {
-                    BigRational::from_integer(BigInt::from(1))
+                if qubit == BigRational::from_integer(BigInt::from(0)).into() {
+                    BigRational::from_integer(BigInt::from(1)).into()
                 } else {
-                    BigRational::from_integer(BigInt::from(0))
+                    BigRational::from_integer(BigInt::from(0)).into()
                 }
             }
             ASTNode::PauliY(qubit) => {
                 let qubit = self.evaluate(*qubit);
-                if qubit == BigRational::from_integer(BigInt::from(0)) {
-                    BigRational::from_integer(BigInt::from(1))
+                if qubit == BigRational::from_integer(BigInt::from(0)).into() {
+                    BigRational::from_integer(BigInt::from(1)).into()
                 } else {
-                    BigRational::from_integer(BigInt::from(-1))
+                    BigRational::from_integer(BigInt::from(-1)).into()
                 }
             }
             ASTNode::PauliZ(qubit) => {
@@ -194,11 +196,11 @@ impl Interpreter {
             ASTNode::CNot(control, target) => {
                 let control = self.evaluate(*control);
                 let target = self.evaluate(*target);
-                if control == BigRational::from_integer(BigInt::from(1)) {
-                    if target == BigRational::from_integer(BigInt::from(0)) {
-                        BigRational::from_integer(BigInt::from(1))
+                if control == BigRational::from_integer(BigInt::from(1)).into() {
+                    if target == BigRational::from_integer(BigInt::from(0)).into() {
+                        BigRational::from_integer(BigInt::from(1)).into()
                     } else {
-                        BigRational::from_integer(BigInt::from(0))
+                        BigRational::from_integer(BigInt::from(0)).into()
                     }
                 } else {
                     target
@@ -210,16 +212,68 @@ impl Interpreter {
                 let num_qubits = self.evaluate(*num_qubits);
                 let mut result = BigRational::from_integer(BigInt::from(0));
                 for _ in 0..num_qubits.to_usize().unwrap() {
-                    result = (result * BigRational::from_integer(BigInt::from(2))) + &state;
+                    result = (result * BigRational::from_integer(BigInt::from(2))) + state.re.clone();
                 }
-                result
+                result.into()
             }
             ASTNode::MeasureQubit(qubit) => {
                 let qubit = self.evaluate(*qubit);
-                if qubit == BigRational::from_integer(BigInt::from(0)) {
-                    BigRational::from_integer(BigInt::from(0))
+                if qubit == BigRational::from_integer(BigInt::from(0)).into() {
+                    BigRational::from_integer(BigInt::from(0)).into()
                 } else {
-                    BigRational::from_integer(BigInt::from(1))
+                    BigRational::from_integer(BigInt::from(1)).into()
+                }
+            }
+            ASTNode::ResetQubit(qubit) => {
+                let _ = self.evaluate(*qubit);
+                BigRational::from_integer(BigInt::from(0)).into()
+            }
+            ASTNode::Toffoli(control1, control2, target) => {
+                let control1 = self.evaluate(*control1);
+                let control2 = self.evaluate(*control2);
+                let target = self.evaluate(*target);
+                if control1 == BigRational::from_integer(BigInt::from(1)).into() && control2 == BigRational::from_integer(BigInt::from(1)).into() {
+                    if target == BigRational::from_integer(BigInt::from(0)).into() {
+                        BigRational::from_integer(BigInt::from(1)).into()
+                    } else {
+                        BigRational::from_integer(BigInt::from(0)).into()
+                    }
+                } else {
+                    target
+                }
+            }
+            ASTNode::SWAP(qubit1_node, qubit2_node) => {
+                let qubit1 = self.evaluate(*qubit1_node);
+                let qubit2 = self.evaluate(*qubit2_node);
+                &qubit1 + &qubit2 - (&qubit1 * &qubit2 * BigRational::from_integer(BigInt::from(2)))
+            }
+            ASTNode::Phase(qubit) => {
+                let qubit = self.evaluate(*qubit);
+                qubit * BigRational::from_integer(BigInt::from(-1))
+            }
+            ASTNode::SGate(qubit) => {
+                // S gate applies a phase shift of π/2 (multiplication by i)
+                let q = self.evaluate(*qubit);
+                q * Complex::new(BigRational::from_integer(<BigInt as num_traits::Zero>::zero()), BigRational::from_integer(<BigInt as num_traits::One>::one()))
+            }
+            
+            ASTNode::TGate(qubit) => {
+                // T gate applies a phase shift of π/4
+                let q = self.evaluate(*qubit);
+                let one = BigRational::from_integer(<BigInt as num_traits::One>::one());
+                let sqrt_two = BigRational::from_float(2f64.sqrt()).unwrap();
+                let sqrt_two_over_two = &one / &sqrt_two;
+                let phase = Complex::new(sqrt_two_over_two.clone(), sqrt_two_over_two);
+                q * phase
+            }
+            ASTNode::Fredkin(control, target1, target2) => {
+                let control = self.evaluate(*control);
+                let target1 = self.evaluate(*target1);
+                let target2 = self.evaluate(*target2);
+                if control == BigRational::from_integer(BigInt::from(1)).into() {
+                    target2
+                } else {
+                    target1
                 }
             }
             ASTNode::Call(name, args) => {
@@ -249,30 +303,30 @@ impl Interpreter {
                 // Execute the parsed nodes
                 let imported_interpreter = Arc::new(Mutex::new(Interpreter::new()));
                 let results: Vec<BigRational> = nodes.into_iter().map(|node| {
-                                    Interpreter::execute(imported_interpreter.clone(), node.clone());
-                                    imported_interpreter.lock().unwrap().evaluate(node)
-                                }).collect();
-                results.last().cloned().unwrap_or_else(|| BigRational::from_integer(BigInt::from(0)))
+                                                    Interpreter::execute(imported_interpreter.clone(), node.clone());
+                                                    imported_interpreter.lock().unwrap().evaluate(node).re
+                                                }).collect();
+                results.last().cloned().unwrap_or_else(|| BigRational::from_integer(BigInt::from(0))).into()
             }
-            ASTNode::Pi => pi_constant(),
-            ASTNode::Kelvin => kelvin_constant(),
-            ASTNode::RD => rd_constant(),
-            ASTNode::CP => cp_constant(),
-            ASTNode::P0 => p0_constant(),
-            ASTNode::LV => lv_constant(),
-            ASTNode::CW => cw_constant(),
-            ASTNode::RhoAir => rho_air_constant(),
-            ASTNode::RhoWater => rho_water_constant(),
-            ASTNode::G => g_constant(),
+            ASTNode::Pi => pi_constant().into(),
+            ASTNode::Kelvin => kelvin_constant().into(),
+            ASTNode::RD => rd_constant().into(),
+            ASTNode::CP => cp_constant().into(),
+            ASTNode::P0 => p0_constant().into(),
+            ASTNode::LV => lv_constant().into(),
+            ASTNode::CW => cw_constant().into(),
+            ASTNode::RhoAir => rho_air_constant().into(),
+            ASTNode::RhoWater => rho_water_constant().into(),
+            ASTNode::G => g_constant().into(),
             ASTNode::GreaterThan(left, right) => {
                 let left_val = self.evaluate(*left);
                 let right_val = self.evaluate(*right);
-                if left_val > right_val { BigRational::from_integer(BigInt::from(1)) } else { BigRational::from_integer(BigInt::from(0)) }
+                if left_val.re > right_val.re { BigRational::from_integer(BigInt::from(1)).into() } else { BigRational::from_integer(BigInt::from(0)).into() }
             }
             ASTNode::LessThan(left, right) => {
                 let left_val = self.evaluate(*left);
                 let right_val = self.evaluate(*right);
-                if left_val < right_val { BigRational::from_integer(BigInt::from(1)) } else { BigRational::from_integer(BigInt::from(0)) }
+                if left_val.re < right_val.re { BigRational::from_integer(BigInt::from(1)).into() } else { BigRational::from_integer(BigInt::from(0)).into() }
             }
             _ => panic!("Unexpected AST node: {:?}", node),
         }

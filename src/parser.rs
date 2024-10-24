@@ -87,6 +87,13 @@ impl Parser {
             Token::CNot => self.parse_cnot(),
             Token::Qubit => self.parse_qubit(),
             Token::MeasureQubit => self.parse_measure_qubit(),
+            Token::ResetQubit => self.parse_reset_qubit(),
+            Token::Toffoli => self.parse_toffoli(),
+            Token::SWAP => self.parse_swap(),
+            Token::Phase => self.parse_phase(),
+            Token::TGate => self.parse_tgate(),
+            Token::SGate => self.parse_sgate(),
+            Token::Fredkin => self.parse_fredkin(),
             Token::Pi => {
                 self.consume(Token::Pi);
                 ASTNode::Pi
@@ -285,6 +292,72 @@ impl Parser {
         let qubit = self.parse_expression();
         self.consume(Token::RParen);
         ASTNode::MeasureQubit(Box::new(qubit))
+    }
+
+    fn parse_reset_qubit(&mut self) -> ASTNode {
+        self.consume(Token::ResetQubit);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::ResetQubit(Box::new(qubit))
+    }
+
+    fn parse_toffoli(&mut self) -> ASTNode {
+        self.consume(Token::Toffoli);
+        self.consume(Token::LParen);
+        let control1 = self.parse_expression();
+        self.consume(Token::Comma);
+        let control2 = self.parse_expression();
+        self.consume(Token::Comma);
+        let target = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::Toffoli(Box::new(control1), Box::new(control2), Box::new(target))
+    }
+
+    fn parse_swap(&mut self) -> ASTNode {
+        self.consume(Token::SWAP);
+        self.consume(Token::LParen);
+        let qubit1 = self.parse_expression();
+        self.consume(Token::Comma);
+        let qubit2 = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::SWAP(Box::new(qubit1), Box::new(qubit2))
+    }
+
+    fn parse_phase(&mut self) -> ASTNode {
+        self.consume(Token::Phase);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::Phase(Box::new(qubit))
+    }
+
+    fn parse_tgate(&mut self) -> ASTNode {
+        self.consume(Token::TGate);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::TGate(Box::new(qubit))
+    }
+
+    fn parse_sgate(&mut self) -> ASTNode {
+        self.consume(Token::SGate);
+        self.consume(Token::LParen);
+        let qubit = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::SGate(Box::new(qubit))
+    }
+
+    fn parse_fredkin(&mut self) -> ASTNode {
+        self.consume(Token::Fredkin);
+        self.consume(Token::LParen);
+        let control = self.parse_expression();
+        self.consume(Token::Comma);
+        let target1 = self.parse_expression();
+        self.consume(Token::Comma);
+        let target2 = self.parse_expression();
+        self.consume(Token::RParen);
+        ASTNode::Fredkin(Box::new(control), Box::new(target1), Box::new(target2))
     }
 
     fn parse_call(&mut self) -> ASTNode {

@@ -29,6 +29,13 @@ pub enum ASTNode {
     CNot(Box<ASTNode>, Box<ASTNode>),
     Qubit(Box<ASTNode>, Box<ASTNode>), // Create a qubit with a given state
     MeasureQubit(Box<ASTNode>), // Measure a qubit
+    ResetQubit(Box<ASTNode>), // Reset a qubit
+    Toffoli(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>), // Toffoli gate
+    SWAP(Box<ASTNode>, Box<ASTNode>), // SWAP gate
+    Phase(Box<ASTNode>), // Phase gate
+    TGate(Box<ASTNode>), // T gate
+    SGate(Box<ASTNode>), // S gate
+    Fredkin(Box<ASTNode>, Box<ASTNode>, Box<ASTNode>), // Fredkin gate
     Pi,
     Kelvin,
     RD,
